@@ -1,13 +1,30 @@
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+
+const scratchRoot = path.resolve('test/.scratch');
 
 export function scratchSpace(prefix) {
   const root = mkdtempSync(path.join(tmpdir(), prefix));
 
   return {
     directory: (name) => mkdtempSync(path.join(root, name)),
+    remove: () => rmSync(root, { recursive: true, force: true }),
+  };
+}
+
+export function projectScratch(owner) {
+  const root = path.join(scratchRoot, owner);
+
+  return {
+    file(name, contents) {
+      mkdirSync(root, { recursive: true });
+      const full = path.join(root, name);
+      writeFileSync(full, contents);
+
+      return path.relative(path.resolve(), full);
+    },
     remove: () => rmSync(root, { recursive: true, force: true }),
   };
 }
@@ -19,4 +36,14 @@ export function runSensor(script, target) {
   });
 
   return { output: result.stdout, status: result.status };
+}
+
+export function fireHook(hook, payload, environment = {}) {
+  const result = spawnSync(process.execPath, [hook], {
+    input: JSON.stringify(payload),
+    encoding: 'utf8',
+    env: { ...process.env, ...environment },
+  });
+
+  return { out: result.stdout, err: result.stderr, status: result.status };
 }

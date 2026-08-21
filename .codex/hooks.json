@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/worktree-baseline.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "shell|Bash|apply_patch|exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/post-edit-sensor.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Running the cheap sensors on what just changed"
+          }
+        ]
+      }
+    ]
+  }
+}

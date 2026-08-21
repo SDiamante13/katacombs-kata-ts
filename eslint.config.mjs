@@ -67,6 +67,8 @@ export default defineConfig(
       'reports/**',
       '.stryker-tmp/**',
       'docs/**',
+      '!.claude/**',
+      '!.codex/**',
     ],
   },
   {

@@ -19,8 +19,14 @@ How each sensor is wired, and which files to copy into your own project.
 | `.jscpd.json`                         | structural          | duplication across files                                  | live    |
 | `scripts/jscpd-sensor.mjs`            | structural          | duplication findings, in the same coached format          | live    |
 | `stryker.config.mjs`                  | behavioral          | mutation testing, scoped to changed files                 | pending |
-| `.claude/hooks/`                      | trigger             | PostToolUse, Stop and PreToolUse wiring for Claude Code   | pending |
-| `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                             | pending |
+| `scripts/edit-sensors.mjs`            | trigger             | runs the cheap tier over the files an edit just touched   | live    |
+| `scripts/sensor-tier.mjs`             | trigger             | the `SENSORS` switch that decides which tier owns them    | live    |
+| `scripts/session-ledger.mjs`          | trigger             | the changed-path ledger the Stop hooks will read          | live    |
+| `scripts/worktree-watch.mjs`          | trigger             | what Codex uses instead of a file path                    | live    |
+| `.claude/settings.json`               | trigger             | PostToolUse wiring for Claude Code                        | live    |
+| `.claude/hooks/`                      | trigger             | the Claude Code adapter; Stop and PreToolUse pending      | live    |
+| `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                             | live    |
+| `.codex/hooks/`                       | trigger             | the Codex adapters                                        | live    |
 | `.claude/skills/design-sensor/`       | design              | the inferential reviewer and its charter                  | pending |
 | `AGENTS.md`                           | contract            | what the agent is told, including sensor integrity        | pending |
 
@@ -216,7 +222,113 @@ If your agent has no hooks you still get the second and third.
 
 ## Wiring, side by side
 
-_Pending: the Claude Code and Codex CLI hook definitions, shown together._
+The cheap tier fires after every edit. Both runtimes call the same core —
+`scripts/edit-sensors.mjs` — behind a thin adapter, because the two of them hand you very
+different things.
+
+**Claude Code** matches the edit tools and tells you which file it wrote:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-sensor.mjs\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The adapter reads `tool_input.file_path`, runs the sensors, and on a finding writes the coaching
+to stderr and exits `2` — which is how Claude Code feeds a hook's output back to the model.
+
+**Codex** matches shell commands only. There is no `file_path` in the payload, because as far as
+Codex is concerned the agent ran `apply_patch`, not `Edit`. So the adapter watches the worktree
+instead: it keeps a snapshot of `git status --porcelain` plus modification times, and the files
+whose stamp moved are the files that changed. A `SessionStart` hook takes the first snapshot so
+the session's opening state is never mistaken for an edit.
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/worktree-baseline.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "shell|Bash|apply_patch|exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/post-edit-sensor.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Running the cheap sensors on what just changed"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Codex takes its answer as JSON on stdout — `{"decision": "block", "reason": "..."}` — rather than
+as an exit code.
+
+That difference is the whole argument for keeping the sensors out of the hooks. The core knows
+nothing about either runtime; the adapters know nothing about linting. Porting to a third agent is
+one file.
+
+### What the agent sees
+
+Nothing at all, when the edit is clean. That is deliberate: a sensor that speaks on every edit is
+a sensor the agent learns to skim. On a finding it gets a roll call and the coaching:
+
+```text
+EDIT SENSORS: eslint SKIP · jscpd PASS · gitleaks PASS · docs FAIL
+
+SENSOR docs: FAIL (2 findings)
+
+test/probe.md:6 ERROR missing-script
+  `npm run nonexistent:script` is documented, but package.json has no "nonexistent:script" script.
+
+  STALE-DOC
+  The documentation names something that is not there. ...
+```
+
+The roll call names the sensors that passed as well as the one that failed, so the agent learns
+what is watching rather than only what it broke.
+
+### Running both tiers without running everything twice
+
+The agent hook and the pre-commit hook overlap: both run the cheap sensors. That redundancy is
+the point of tier 2 — it is what covers you when your agent has no hooks — but it should be a
+choice. One environment variable decides:
+
+| `SENSORS`      | After every edit | At commit                                     |
+| -------------- | ---------------- | --------------------------------------------- |
+| unset or `all` | fires            | `npm run check` — everything                  |
+| `agent`        | fires            | `npm run check:behavioral` — typecheck, tests |
+| `git`          | silent           | `npm run check` — everything                  |
+
+`agent` is the setting with no duplicated work: the cheap sensors already ran inside the loop, so
+the commit gate only adds what they were too slow to do. `git` is for an agent with no hooks at
+all. The default is both, because being told twice is cheaper than being told never.
 
 ## Other languages
 

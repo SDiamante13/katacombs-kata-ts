@@ -7,5 +7,6 @@
   "output": "reports/jscpd",
   "gitignore": true,
   "silent": true,
-  "absolute": true
+  "absolute": true,
+  "ignore": ["**/.scratch/**"]
 }
