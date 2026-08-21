@@ -1,0 +1,102 @@
+import js from '@eslint/js';
+import { defineConfig } from 'eslint/config';
+import importPlugin from 'eslint-plugin-import';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+
+import { sensorRules } from './scripts/eslint-rules/index.mjs';
+
+const maintainabilityRules = {
+  'max-lines-per-function': [
+    'error',
+    { max: 25, skipBlankLines: true, skipComments: true },
+  ],
+  'max-lines': ['error', { max: 150, skipBlankLines: true, skipComments: false }],
+  complexity: ['error', 5],
+  'max-params': ['error', 4],
+  'max-depth': ['error', 2],
+  'max-statements': ['error', 15],
+};
+
+const commentRules = {
+  'sensors/no-commented-out-code': 'error',
+  'no-warning-comments': [
+    'error',
+    { terms: ['todo', 'fixme', 'xxx', 'hack'], location: 'anywhere' },
+  ],
+};
+
+const typeSafetyRules = {
+  '@typescript-eslint/no-explicit-any': 'error',
+  '@typescript-eslint/prefer-as-const': 'error',
+  '@typescript-eslint/explicit-function-return-type': 'error',
+  '@typescript-eslint/no-unsafe-assignment': 'error',
+  '@typescript-eslint/no-unsafe-return': 'error',
+  '@typescript-eslint/no-unsafe-call': 'error',
+  '@typescript-eslint/no-unsafe-member-access': 'error',
+  '@typescript-eslint/no-unused-vars': [
+    'error',
+    {
+      args: 'all',
+      argsIgnorePattern: '^_',
+      varsIgnorePattern: '^_',
+      caughtErrorsIgnorePattern: '^_',
+      ignoreRestSiblings: false,
+    },
+  ],
+};
+
+const specSuiteRules = {
+  'max-lines-per-function': 'off',
+  'max-statements': 'off',
+  '@typescript-eslint/explicit-function-return-type': 'off',
+};
+
+export default defineConfig(
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+      'coverage/**',
+      'reports/**',
+      '.stryker-tmp/**',
+      'docs/**',
+    ],
+  },
+  {
+    files: ['**/*.{js,mjs,ts}'],
+    extends: [js.configs.recommended],
+    languageOptions: { globals: globals.node },
+    plugins: { sensors: sensorRules },
+    rules: { ...maintainabilityRules, ...commentRules },
+  },
+  {
+    files: ['src/**/*.ts', 'test/**/*.ts'],
+    extends: [tseslint.configs.recommendedTypeChecked],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    plugins: { import: importPlugin },
+    rules: {
+      ...typeSafetyRules,
+      'consistent-return': 'error',
+      'import/order': [
+        'error',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          'newlines-between': 'always',
+        },
+      ],
+      'import/no-default-export': 'error',
+      'no-unused-vars': 'off',
+    },
+  },
+  {
+    files: ['test/**/*.ts'],
+    rules: specSuiteRules,
+  },
+);

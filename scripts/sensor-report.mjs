@@ -1,0 +1,24 @@
+function indent(text) {
+  return text
+    .split('\n')
+    .map((line) => (line === '' ? '' : `  ${line}`))
+    .join('\n');
+}
+
+export function coach({ name, text, kernel }, coached) {
+  if (coached.has(name)) return `  → ${name} (${kernel}), coached above`;
+
+  coached.add(name);
+
+  return `\n${indent(`${name.toUpperCase()}\n${text}`)}`;
+}
+
+function pluralize(count, noun) {
+  return `${count} ${noun}${count === 1 ? '' : 's'}`;
+}
+
+export function sensorReport(sensor, findings) {
+  if (findings.length === 0) return `SENSOR ${sensor}: PASS (0 findings)\n`;
+
+  return `SENSOR ${sensor}: FAIL (${pluralize(findings.length, 'finding')})\n\n${findings.join('\n\n')}\n`;
+}

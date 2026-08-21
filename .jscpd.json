@@ -1,0 +1,11 @@
+{
+  "path": ["src", "test", "scripts"],
+  "format": ["typescript", "javascript"],
+  "minTokens": 50,
+  "minLines": 5,
+  "reporters": ["json"],
+  "output": "reports/jscpd",
+  "gitignore": true,
+  "silent": true,
+  "absolute": true
+}
