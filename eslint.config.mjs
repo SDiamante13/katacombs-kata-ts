@@ -4,6 +4,11 @@ import importPlugin from 'eslint-plugin-import';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
+import {
+  boundaryImports,
+  impureGlobals,
+  nondeterminism,
+} from './scripts/eslint-rules/design-sensors.mjs';
 import { sensorRules } from './scripts/eslint-rules/index.mjs';
 
 const maintainabilityRules = {
@@ -96,7 +101,19 @@ export default defineConfig(
     },
   },
   {
-    files: ['test/**/*.ts'],
+    files: ['test/**/*.{ts,mjs}'],
     rules: specSuiteRules,
+  },
+  {
+    files: ['src/domain/**/*.ts', 'src/ports/**/*.ts'],
+    rules: {
+      'no-restricted-imports': ['error', boundaryImports],
+      'no-restricted-globals': ['error', ...impureGlobals],
+      'no-restricted-syntax': ['error', ...nondeterminism],
+    },
+  },
+  {
+    files: ['test/**/*.{ts,mjs}'],
+    rules: { 'sensors/no-mocking-library': 'error' },
   },
 );

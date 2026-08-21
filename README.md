@@ -69,21 +69,34 @@ project.
 The demo is TypeScript. Each tier has an equivalent in other ecosystems, so point your agent at
 this repo and ask it to rebuild the loop in your language.
 
-| Tier                | JS/TS              | Java            | Python        | Go / Rust / PHP                        |
-| ------------------- | ------------------ | --------------- | ------------- | -------------------------------------- |
-| Structural          | ESLint             | PMD, Checkstyle | Ruff, pylint  | golangci-lint, clippy, PHPMD           |
-| Duplication         | jscpd              | jscpd           | jscpd         | jscpd                                  |
-| Behavioral          | Stryker            | PIT             | mutmut        | go-mutesting, cargo-mutants, Infection |
-| Design (computable) | dependency-cruiser | ArchUnit        | import-linter | deptrac                                |
+| Tier                | JS/TS              | Java            | Python        | Go / Rust / PHP                            |
+| ------------------- | ------------------ | --------------- | ------------- | ------------------------------------------ |
+| Structural          | ESLint             | PMD, Checkstyle | Ruff, pylint  | golangci-lint, clippy, PHPMD               |
+| Duplication         | jscpd              | jscpd           | jscpd         | jscpd — _one tool, ~150 languages_         |
+| Secrets             | gitleaks           | gitleaks        | gitleaks      | gitleaks — _it scans text, so all of them_ |
+| Behavioral          | Stryker            | PIT             | mutmut        | go-mutesting, cargo-mutants, Infection     |
+| Design (computable) | dependency-cruiser | ArchUnit        | import-linter | deptrac                                    |
+
+The two cheap-tier rows are the easy win: duplication and secret scanning are **one tool each,
+whatever you write**. Neither parses your language, so neither needs a port.
+
+Two of the rules in this repo have no off-the-shelf equivalent in any of those columns — the one
+that finds commented-out code and the one that bans mocking libraries. Each is about
+twenty-five lines. That is the part most worth copying: when your ecosystem has no rule for the
+thing you care about, write it. Every linter in that table takes custom rules, and the rule is
+usually shorter than the argument about whether you need it.
 
 ## Getting started
 
 ```sh
 npm install
-npm test          # behavior tests
-npm run check     # typecheck + tests + sensor lint; what the hooks run
-npm start         # play the game in a terminal
+npm run check     # typecheck, secrets, tests, structure, duplication — what the hooks run
+npm test          # the tests on their own
 ```
+
+`npm run check` runs every sensor. One of them, `gitleaks`, is a binary rather than a package —
+`brew install gitleaks`, or grab a release. If it is missing the check fails rather than skipping:
+a scanner that cannot run must never report green.
 
 ## Architecture
 

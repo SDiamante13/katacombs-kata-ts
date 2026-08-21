@@ -1,16 +1,28 @@
 import { comments } from './guides/comments.mjs';
+import { design } from './guides/design.mjs';
 import { mechanical } from './guides/mechanical.mjs';
+import { secrets } from './guides/secrets.mjs';
 import { structural } from './guides/structural.mjs';
 import { types } from './guides/types.mjs';
 
 export const guides = Object.fromEntries(
-  Object.entries({ ...structural, ...comments, ...types, ...mechanical }).map(
-    ([name, lines]) => [name, lines.join('\n')],
-  ),
+  Object.entries({
+    ...structural,
+    ...comments,
+    ...design,
+    ...secrets,
+    ...types,
+    ...mechanical,
+  }).map(([name, lines]) => [name, lines.join('\n')]),
 );
 
 export const kernels = {
   'long-function': 'extract one function per job',
+  'boundary-violation': 'point the arrow inward',
+  'impure-domain': 'take a port, not the world',
+  'nondeterministic-domain': 'pass the clock in',
+  'mocking-library': 'hand-roll a Fake',
+  'leaked-secret': 'rotate it first, then remove it',
   'commented-out-code': 'delete it, git remembers',
   'deferred-work': 'do it, or track it properly',
   'long-file': 'decide which kind of big it is',
@@ -35,6 +47,10 @@ export const kernels = {
 const guideByRule = {
   'max-lines-per-function': 'long-function',
   'sensors/no-commented-out-code': 'commented-out-code',
+  'sensors/no-mocking-library': 'mocking-library',
+  'no-restricted-imports': 'boundary-violation',
+  'no-restricted-globals': 'impure-domain',
+  'no-restricted-syntax': 'nondeterministic-domain',
   'no-warning-comments': 'deferred-work',
   'max-lines': 'long-file',
   complexity: 'high-complexity',

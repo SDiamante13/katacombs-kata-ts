@@ -27,9 +27,10 @@ How each sensor is wired, and which files to copy into your own project.
 ## The structural sensor
 
 ```sh
-npm run lint:sensor   # thresholds, type safety — coached
-npm run dup:sensor    # duplication — coached
-npm run format        # prettier, silent, never a finding
+npm run lint:sensor    # thresholds, type safety — coached
+npm run dup:sensor     # duplication — coached
+npm run secret:sensor  # credentials — coached
+npm run format         # prettier, silent, never a finding
 ```
 
 | Threshold                | Value | Fires on                                     |
@@ -107,6 +108,58 @@ agent attention is too expensive to spend on whitespace.
 
 > **Fix what's mechanical. Coach what's judgment.**
 
+## Secrets
+
+`gitleaks` scans the working tree on every `npm run check`. It needs the binary on PATH —
+`brew install gitleaks`, or see the project's releases. It is the one sensor here with an external
+prerequisite, and that is deliberate: the alternative was an unofficial npm wrapper, and a repo
+about code integrity should not take a supply-chain shortcut to get a supply-chain tool.
+
+Three choices worth copying:
+
+- **It never prints the secret.** The finding gives you the rule, the file and the line; the value
+  stays redacted. A sensor that echoes the credential into a terminal, a CI log and an agent's
+  context has widened the leak in the course of reporting it.
+- **`--ignore-gitleaks-allow`.** By default a `// gitleaks:allow` comment silences a finding. That
+  is a suppression an agent can write, so the flag closes it. The `.gitleaksignore` file is the
+  same hole with a different shape; there isn't one in this repo.
+- **It fails when it cannot run.** No binary, a bad exit code, a missing report — all of them
+  report `UNAVAILABLE` and exit non-zero rather than `PASS`. **A scanner that cannot run must never
+  report green**, and that is not hypothetical: the first version of this sensor passed a malformed
+  flag, silently scanned the wrong directory, and reported PASS on a file containing a live-looking
+  token. The test that now catches it plants a credential and demands a FAIL.
+
+Note where this sits. Secret scanning is not about maintainability, so it is not one of the three
+sensors — but it is deterministic, it costs milliseconds, and it fires on every edit, so it belongs
+in the same cheap tier. **The cheap tier is not a category of problem, it is a category of cost.**
+
+## The design sensor, computationally
+
+Most of design is not a judgment call. These rules cost the same milliseconds as the structural
+ones and fire on the same edit — they are `no-restricted-imports`, `no-restricted-globals` and
+`no-restricted-syntax`, aimed at `src/domain/**` and `src/ports/**`.
+
+| Fires when the domain…                                          | Because                                                               |
+| --------------------------------------------------------------- | --------------------------------------------------------------------- |
+| imports from `src/adapters`                                     | dependencies point inward; the domain never knows an adapter          |
+| imports `node:fs`, `readline`, `http`…                          | I/O belongs at the outer shell, behind a port                         |
+| touches `console`, `process`, `fetch`, `window`                 | the domain does not print, read the environment, or reach the network |
+| calls `Math.random()`, `Date.now()`, `new Date()`, `setTimeout` | time and randomness are inputs, not ambient facts                     |
+
+And in the tests, `sensors/no-mocking-library` bans `vi.mock`, `jest.spyOn`, `sinon.stub` and their
+relatives. That one is Michael Feathers' argument compiled into a lint rule: hard-to-test code is
+badly designed code, so mocking pain is design feedback. A mocking library medicates the pain and
+throws the feedback away. Write a Fake in `test/fakes/`; if the Fake is awkward, the port is wrong,
+and that is worth more than the test you were about to write.
+
+**These rules were written before `src/domain` existed.** A glob that matches nothing is inert, and
+it starts biting the instant the first domain file lands — so there is never a window where the
+architecture is unwatched.
+
+Note what this buys that the structural sensor cannot: no threshold can see that a function reached
+for the file system. **Structural sensors buy clean shape; only boundary sensors buy clean
+boundaries.**
+
 ## The three tiers
 
 | Sensor                 | Detects                                                          | Cost             | Fires                   |
@@ -136,12 +189,22 @@ _Pending: the Claude Code and Codex CLI hook definitions, shown together._
 
 ## Other languages
 
-| Tier                | JS/TS              | Java            | Python        | Go / Rust / PHP                        |
-| ------------------- | ------------------ | --------------- | ------------- | -------------------------------------- |
-| Structural          | ESLint             | PMD, Checkstyle | Ruff, pylint  | golangci-lint, clippy, PHPMD           |
-| Duplication         | jscpd              | jscpd           | jscpd         | jscpd                                  |
-| Behavioral          | Stryker            | PIT             | mutmut        | go-mutesting, cargo-mutants, Infection |
-| Design (computable) | dependency-cruiser | ArchUnit        | import-linter | deptrac                                |
+| Tier                | JS/TS              | Java            | Python        | Go / Rust / PHP                            |
+| ------------------- | ------------------ | --------------- | ------------- | ------------------------------------------ |
+| Structural          | ESLint             | PMD, Checkstyle | Ruff, pylint  | golangci-lint, clippy, PHPMD               |
+| Duplication         | jscpd              | jscpd           | jscpd         | jscpd — _one tool, ~150 languages_         |
+| Secrets             | gitleaks           | gitleaks        | gitleaks      | gitleaks — _it scans text, so all of them_ |
+| Behavioral          | Stryker            | PIT             | mutmut        | go-mutesting, cargo-mutants, Infection     |
+| Design (computable) | dependency-cruiser | ArchUnit        | import-linter | deptrac                                    |
+
+The two cheap-tier rows are the easy win: duplication and secret scanning are **one tool each,
+whatever you write**. Neither parses your language, so neither needs a port.
+
+Two of the rules in this repo have no off-the-shelf equivalent in any of those columns — the one
+that finds commented-out code and the one that bans mocking libraries. Each is about
+twenty-five lines. That is the part most worth copying: when your ecosystem has no rule for the
+thing you care about, write it. Every linter in that table takes custom rules, and the rule is
+usually shorter than the argument about whether you need it.
 
 ## Keeping a sensor honest
 
