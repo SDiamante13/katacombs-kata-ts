@@ -98,6 +98,7 @@ describe('the Claude Code adapter', () => {
   });
 
   it('says nothing when the edit is clean', () => {
+    forgetSession('claude-quiet');
     const file = scratch.file('claude-good.mjs', "export const room = 'Vault';\n");
     const { out, err, status } = fireHook(CLAUDE_HOOK, {
       session_id: 'claude-quiet',
@@ -117,7 +118,21 @@ describe('the Claude Code adapter', () => {
       tool_input: { file_path: file },
     });
 
-    expect(changedThisSession('claude-ledger')).toEqual([file]);
+    expect(changedThisSession('claude-ledger')).toContain(file);
+  });
+
+  it('catches a file written by a shell command, which names no path', () => {
+    forgetSession('claude-shell');
+    fireHook(CLAUDE_HOOK, { session_id: 'claude-shell', tool_input: { command: 'ls' } });
+
+    scratch.file('claude-shell-write.mjs', TANGLED);
+    const { err, status } = fireHook(CLAUDE_HOOK, {
+      session_id: 'claude-shell',
+      tool_input: { command: 'python3 write_it.py' },
+    });
+
+    expect(status).toBe(2);
+    expect(err).toContain('SENSOR eslint: FAIL');
   });
 
   it('stands down when the attendee has chosen the git tier', () => {

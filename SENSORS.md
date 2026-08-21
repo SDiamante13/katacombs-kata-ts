@@ -22,11 +22,12 @@ How each sensor is wired, and which files to copy into your own project.
 | `scripts/edit-sensors.mjs`            | trigger             | runs the cheap tier over the files an edit just touched   | live    |
 | `scripts/sensor-tier.mjs`             | trigger             | the `SENSORS` switch that decides which tier owns them    | live    |
 | `scripts/session-ledger.mjs`          | trigger             | the changed-path ledger the Stop hooks will read          | live    |
-| `scripts/worktree-watch.mjs`          | trigger             | what Codex uses instead of a file path                    | live    |
-| `.claude/settings.json`               | trigger             | PostToolUse wiring for Claude Code                        | live    |
+| `scripts/worktree-watch.mjs`          | trigger             | catches a file a shell command wrote, which names no path | live    |
+| `scripts/worktree-baseline.mjs`       | trigger             | SessionStart; the one hook both runtimes share unchanged  | live    |
+| `.claude/settings.json`               | trigger             | SessionStart and PostToolUse wiring for Claude Code       | live    |
 | `.claude/hooks/`                      | trigger             | the Claude Code adapter; Stop and PreToolUse pending      | live    |
 | `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                             | live    |
-| `.codex/hooks/`                       | trigger             | the Codex adapters                                        | live    |
+| `.codex/hooks/`                       | trigger             | the Codex adapter                                         | live    |
 | `.claude/skills/design-sensor/`       | design              | the inferential reviewer and its charter                  | pending |
 | `AGENTS.md`                           | contract            | what the agent is told, including sensor integrity        | pending |
 
@@ -226,14 +227,14 @@ The cheap tier fires after every edit. Both runtimes call the same core —
 `scripts/edit-sensors.mjs` — behind a thin adapter, because the two of them hand you very
 different things.
 
-**Claude Code** matches the edit tools and tells you which file it wrote:
+**Claude Code** names the file its edit tools wrote:
 
 ```json
 {
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
         "hooks": [
           {
             "type": "command",
@@ -250,11 +251,17 @@ different things.
 The adapter reads `tool_input.file_path`, runs the sensors, and on a finding writes the coaching
 to stderr and exits `2` — which is how Claude Code feeds a hook's output back to the model.
 
-**Codex** matches shell commands only. There is no `file_path` in the payload, because as far as
-Codex is concerned the agent ran `apply_patch`, not `Edit`. So the adapter watches the worktree
-instead: it keeps a snapshot of `git status --porcelain` plus modification times, and the files
-whose stamp moved are the files that changed. A `SessionStart` hook takes the first snapshot so
-the session's opening state is never mistaken for an edit.
+**Note `Bash` in that matcher.** An agent does not need the edit tools to write a file. `sed -i`,
+a heredoc, a Python one-liner — all of them write, and none of them produce a `file_path`. A hook
+matched only on `Edit|Write` is a hook the agent walks around without ever meaning to. So the
+adapter also watches the working tree, and the `Bash` matcher is what gives it the chance to look.
+
+**Codex** matches shell commands only, so it has nothing else to go on. There is no `file_path` in
+the payload, because as far as Codex is concerned the agent ran `apply_patch`, not `Edit`. It keeps
+a snapshot of `git status --porcelain` plus modification times, and the files whose stamp moved are
+the files that changed. A `SessionStart` hook takes the first snapshot so the session's opening
+state is never mistaken for an edit. Both runtimes share that script, because a session id is the
+one thing they agree on.
 
 ```json
 {
@@ -264,7 +271,7 @@ the session's opening state is never mistaken for an edit.
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/worktree-baseline.mjs\"",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/worktree-baseline.mjs\"",
             "timeout": 10
           }
         ]

@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/worktree-baseline.mjs\"",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/worktree-baseline.mjs\"",
             "timeout": 10
           }
         ]

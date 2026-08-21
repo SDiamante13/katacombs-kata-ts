@@ -6,7 +6,12 @@ import { guides, kernels } from './sensor-guides.mjs';
 import { coach, sensorReport } from './sensor-report.mjs';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
-const reportPath = path.join(projectRoot, 'reports', 'gitleaks', 'report.json');
+const reportPath = path.join(
+  projectRoot,
+  'reports',
+  'gitleaks',
+  `report-${process.pid}.json`,
+);
 
 const secretGuide = {
   name: 'leaked-secret',
@@ -71,7 +76,10 @@ function run(targets) {
   const result = scan(targets);
   if (!completed(result) || !existsSync(reportPath)) return null;
 
-  return JSON.parse(readFileSync(reportPath, 'utf8'));
+  const found = JSON.parse(readFileSync(reportPath, 'utf8'));
+  rmSync(reportPath, { force: true });
+
+  return found;
 }
 
 const found = run(process.argv.slice(2).length ? process.argv.slice(2) : ['.']);

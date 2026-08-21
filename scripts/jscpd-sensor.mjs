@@ -7,18 +7,22 @@ import { coach, sensorReport } from './sensor-report.mjs';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const jscpdBin = path.join(projectRoot, 'node_modules', 'jscpd', 'run-jscpd.js');
-const reportPath = path.join(projectRoot, 'reports', 'jscpd', 'jscpd-report.json');
+const reportRoot = path.join(projectRoot, 'reports', 'jscpd', String(process.pid));
+const reportPath = path.join(reportRoot, 'jscpd-report.json');
 
 function detectClones(targets) {
-  rmSync(reportPath, { force: true });
-  spawnSync(process.execPath, [jscpdBin, ...targets], {
+  rmSync(reportRoot, { recursive: true, force: true });
+  spawnSync(process.execPath, [jscpdBin, ...targets, '--output', reportRoot], {
     cwd: projectRoot,
     stdio: 'ignore',
   });
 
   if (!existsSync(reportPath)) return [];
 
-  return JSON.parse(readFileSync(reportPath, 'utf8')).duplicates ?? [];
+  const found = JSON.parse(readFileSync(reportPath, 'utf8')).duplicates ?? [];
+  rmSync(reportRoot, { recursive: true, force: true });
+
+  return found;
 }
 
 function locate(file) {

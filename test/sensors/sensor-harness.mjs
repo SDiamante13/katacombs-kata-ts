@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -36,6 +36,20 @@ export function runSensor(script, target) {
   });
 
   return { output: result.stdout, status: result.status };
+}
+
+function sensorPromise(script, target) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [script, target], { cwd: path.resolve() });
+    let output = '';
+
+    child.stdout.on('data', (chunk) => (output += chunk));
+    child.on('close', (status) => resolve({ output, status }));
+  });
+}
+
+export function runSensorsAtOnce(runs) {
+  return Promise.all(runs.map(([script, target]) => sensorPromise(script, target)));
 }
 
 export function fireHook(hook, payload, environment = {}) {
