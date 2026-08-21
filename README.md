@@ -1,77 +1,93 @@
-# Katacombs — Maintainability Sensors Demo
+# Katacombs — Quality Sensors Demo
 
-A text adventure game, built from scratch by a coding agent with **three maintainability sensors**
+A text adventure game, built from scratch by a coding agent with **three quality sensors**
 wired into its loop. The game is the vehicle. The sensors are the point.
 
-Companion repo for the *AI Coding Agent Code Quality* workshop.
+Companion repo for the _AI Coding Agent Code Quality_ workshop.
 Slides: **https://sdiamante13.github.io/katacombs-kata-ts/**
 
 ---
 
 ## The problem
 
-A coding agent writes more code than any team can review line by line. Left alone it accumulates
-design debt quickly, and the debt compounds: tangled code costs more tokens to work in, produces
-more errors, and takes longer for a human to understand well enough to approve.
+A coding agent writes more code than any team can review line by line. Left alone it piles up
+design debt, and the debt compounds: tangled code costs more tokens to work in, produces more
+errors, and takes longer for a human to understand well enough to approve.
 
-A linter alone doesn't fix this. Given only `max-lines-per-function exceeded`, an agent will happily
-cut a function in half and name the second half `buildLinesAndTotal` — the number goes green and the
-code gets worse. Worse still, the signal that something was wrong is now gone.
+A linter alone doesn't fix this. Given only `max-lines-per-function exceeded`, an agent cuts a
+function in half and names the second half `buildLinesAndTotal`. The number goes green, the code
+gets worse, and the signal that told you something was wrong is gone.
 
-A **sensor** is the fix. Three parts, and it fails if you skip any of them:
+A **sensor** is the fix. It has three parts, and each one fails differently when you skip it:
+
+| Ask                    | Skip it and                                          | Which is                    |
+| ---------------------- | ---------------------------------------------------- | --------------------------- |
+| **What notices?**      | nothing tells you the code is drifting               | the obvious failure         |
+| **What does it say?**  | the agent games the number and destroys the evidence | Ivett Ördög's finding       |
+| **What makes it run?** | the check exists and nobody runs it                  | Birgitta Böckeler's finding |
+
+Three questions, three answers:
 
 ```
 DETECT  →  COACH  →  TRIGGER
 ```
 
-- **Detect** — a tool finds the problem, or a reviewer with judgment does.
-- **Coach** — the finding arrives *with* the guidance for fixing it, in the same message. Not a
-  number to satisfy; an explanation of what the number means.
-- **Trigger** — a hook fires it automatically. Not a line in a config file asking the agent to
-  remember. Instructions are a request; hooks are a wall.
+**DETECT — what notices?** A tool, or a reviewer with judgment. Cheap deterministic tools catch
+the things you can name in advance; an LLM catches what you can't.
+
+**COACH — what does it say?** The finding arrives _with_ the guidance for fixing it, in the same
+message. A bare threshold tells the agent which number to push down. An explanation tells it what
+the number stands in for. Skip this, and you end up behind where you started: the smell survives and
+the linter has gone quiet.
+
+**TRIGGER — what makes it run?** A hook fires it whether anyone remembered to ask. A line in
+a config file competes with everything else in the context window and loses, and an agent cannot
+build the habit of checking. Instructions are a request; hooks are a wall.
+
+Detection is the easy part. Most setups stop there.
 
 ## The three sensors
 
-| Sensor | Detects | Cost | Fires |
-|---|---|---|---|
-| **Structural** | long functions, deep nesting, too many parameters, duplication, unsafe types | milliseconds | after every file edit |
-| **Behavioral** | broken behavior, then **weak assertions** via mutation testing | seconds | when the agent finishes a turn |
-| **Design** | misplaced responsibilities, semantic duplication, names that lie, tests that read as transcripts | dollars and ~30s | once per session, gated |
+| Sensor         | Detects                                                                                          | Cost             | Fires                          |
+| -------------- | ------------------------------------------------------------------------------------------------ | ---------------- | ------------------------------ |
+| **Structural** | long functions, deep nesting, too many parameters, duplication, unsafe types                     | milliseconds     | after every file edit          |
+| **Behavioral** | broken behavior, then **weak assertions** via mutation testing                                   | seconds          | when the agent finishes a turn |
+| **Design**     | misplaced responsibilities, semantic duplication, names that lie, tests that read as transcripts | dollars and ~30s | once per session, gated        |
 
 Trigger frequency matches sensor cost. Cheap sensors run constantly; expensive ones are gated behind
 the cheap ones being green.
 
-A large part of what people call "design" turns out to be **computable** — dependency direction,
-layer boundaries, purity — so it runs in the cheap tier as ordinary lint rules with coaching
-messages attached. Only what genuinely needs judgment reaches the expensive tier.
+Much of design is **computable**: dependency direction, layer boundaries, purity. Those run in the
+cheap tier as ordinary lint rules with coaching messages attached. Only what needs judgment reaches
+the expensive tier.
 
 See **[SENSORS.md](SENSORS.md)** for how each one is wired, and which files to copy into your own
 project.
 
 ## Not just TypeScript
 
-The demo is TypeScript, but every tier has an equivalent everywhere. Point your agent at this repo
-and ask it to rebuild the loop in your language.
+The demo is TypeScript. Each tier has an equivalent in other ecosystems, so point your agent at
+this repo and ask it to rebuild the loop in your language.
 
-| Tier | JS/TS | Java | Python | Go / Rust / PHP |
-|---|---|---|---|---|
-| Structural | ESLint | PMD, Checkstyle | Ruff, pylint | golangci-lint, clippy, PHPMD |
-| Duplication | jscpd | jscpd | jscpd | jscpd |
-| Behavioral | Stryker | PIT | mutmut | go-mutesting, cargo-mutants, Infection |
-| Design (computable) | dependency-cruiser | ArchUnit | import-linter | deptrac |
+| Tier                | JS/TS              | Java            | Python        | Go / Rust / PHP                        |
+| ------------------- | ------------------ | --------------- | ------------- | -------------------------------------- |
+| Structural          | ESLint             | PMD, Checkstyle | Ruff, pylint  | golangci-lint, clippy, PHPMD           |
+| Duplication         | jscpd              | jscpd           | jscpd         | jscpd                                  |
+| Behavioral          | Stryker            | PIT             | mutmut        | go-mutesting, cargo-mutants, Infection |
+| Design (computable) | dependency-cruiser | ArchUnit        | import-linter | deptrac                                |
 
 ## Getting started
 
 ```sh
 npm install
 npm test          # behavior tests
-npm run check     # typecheck + tests + sensor lint — what the hooks run
+npm run check     # typecheck + tests + sensor lint; what the hooks run
 npm start         # play the game in a terminal
 ```
 
 ## Architecture
 
-Hexagonal, and the folder names are load-bearing — the design sensors enforce the boundaries.
+Hexagonal. The design sensors match on these paths, so the folder names are part of the contract.
 
 ```
 src/domain     pure game logic; no clock, no randomness, no I/O
@@ -79,9 +95,9 @@ src/ports      interfaces the domain owns
 src/adapters   terminal and web implementations of those ports
 ```
 
-The domain cannot import an adapter, cannot reach a global, and cannot call `Math.random()` or
-`Date.now()`. Those aren't conventions in a style guide — they're lint rules, and they explain
-themselves when broken.
+The domain cannot import an adapter, reach a global, or call `Math.random()` or `Date.now()`.
+Those are lint rules rather than style-guide advice, and each one prints its reasoning when it
+fires.
 
 ---
 
@@ -90,42 +106,42 @@ themselves when broken.
 Explore an underground world through typed commands, and get out with the treasure.
 
 **The world.** Locations are linked to each other by compass direction, by stairs, or through things
-you can open — doors, gates, passages. Every link is two-way and consistent: if south from A reaches
+you can open: doors, gates, passages. Every link is two-way and consistent: if south from A reaches
 B, then north from B reaches A. No two locations share a title.
 
 **Playing.** On arrival the game prints the location's title and description, then anything lying
 around worth picking up.
 
-| Command | Does |
-|---|---|
-| `GO N` / `E` / `S` / `W` | move by compass direction |
-| `GO UP` / `GO DOWN` | take stairs |
-| `LOOK <direction or item>` | describe surroundings, or inspect a thing |
-| `OPEN <item>` | open a door, gate, chest — the world is not always mundane |
-| `TAKE <item>` / `DROP <item>` | move things between the world and your bag |
-| `BAG` | list what you carry, and your gold — holds ten items |
-| `USE <item>` | use something you carry, where the world allows it |
-| `?` | list commands |
-| `QUIT` | leave |
+| Command                       | Does                                                 |
+| ----------------------------- | ---------------------------------------------------- |
+| `GO N` / `E` / `S` / `W`      | move by compass direction                            |
+| `GO UP` / `GO DOWN`           | take stairs                                          |
+| `LOOK <direction or item>`    | describe surroundings, or inspect a thing            |
+| `OPEN <item>`                 | open a door, gate or chest                           |
+| `TAKE <item>` / `DROP <item>` | move things between the world and your bag           |
+| `BAG`                         | list what you carry, and your gold — holds ten items |
+| `USE <item>`                  | use something you carry, where the world allows it   |
+| `?`                           | list commands                                        |
+| `QUIT`                        | leave                                                |
 
-**Treasure.** Gold is collected automatically the first time you enter a location holding it, or
-open something containing it. Your score is the gold you leave with.
+**Treasure.** Gold is collected the first time you enter a location holding it, or open something
+containing it. Your score is the gold you leave with.
 
 **When the game can't oblige.** Looking somewhere uninteresting, attempting something the location
-doesn't support, and typing nonsense each get their own distinct reply — the game always tells you
-which of the three happened.
+doesn't support, and typing nonsense each get a distinct reply, so you can tell which of the three
+happened.
 
-Building it in slices — movement, then looking, then items, then treasure — gives the sensors
-something to react to on every increment, which is the entire point of the exercise.
+Building it in slices (movement, then looking, then items, then treasure) gives the sensors
+something to react to on every increment.
 
 ---
 
 ## Credits
 
 The kata is **Katacombs of Shoreditch**, by Marco Consolaro, from
-*[Agile Technical Practices Distilled](https://www.packtpub.com/product/agile-technical-practices-distilled/9781838980849)*
+_[Agile Technical Practices Distilled](https://www.packtpub.com/product/agile-technical-practices-distilled/9781838980849)_
 by Pedro M. Santos, Marco Consolaro and Alessandro Di Gioia (Packt). The brief above is a
-paraphrase — read the book for the original, and for the chapter that surrounds it. It's worth it.
+paraphrase. Read the book for the original, and for the surrounding chapter.
 
 The sensor idea and the computational/inferential split come from Birgitta Böckeler's
 [Maintainability sensors for coding agents](https://martinfowler.com/articles/sensors-for-coding-agents.html).
@@ -136,8 +152,8 @@ Pairing a coaching guide with each finding, rather than a bare metric, is Ivett 
 
 The economics are Giles Edwards-Alexander's
 [The economic benefit of refactoring](https://martinfowler.com/articles/exploring-gen-ai/refactoring-economic-benefit.html):
-83% fewer input tokens for the same change, from reorganising the code alone.
+83% fewer input tokens for the same change, from reorganizing the code alone.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).

@@ -1,0 +1,7 @@
+files=$(git diff --cached --name-only --diff-filter=ACMR)
+if [ -n "$files" ]; then
+  echo "$files" | xargs npx prettier --ignore-unknown --write
+  echo "$files" | xargs git add
+fi
+
+npm run check

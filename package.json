@@ -1,0 +1,23 @@
+{
+  "name": "katacombs-kata-ts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A text adventure built under three quality sensors.",
+  "license": "MIT",
+  "scripts": {
+    "check": "npm run typecheck && npm test",
+    "format": "prettier --ignore-unknown --write .",
+    "prepare": "husky",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.7"
+  }
+}
