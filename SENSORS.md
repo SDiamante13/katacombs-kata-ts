@@ -30,6 +30,7 @@ How each sensor is wired, and which files to copy into your own project.
 npm run lint:sensor    # thresholds, type safety — coached
 npm run dup:sensor     # duplication — coached
 npm run secret:sensor  # credentials — coached
+npm run docs:sensor    # documentation that lies — coached
 npm run format         # prettier, silent, never a finding
 ```
 
@@ -132,6 +133,36 @@ Three choices worth copying:
 Note where this sits. Secret scanning is not about maintainability, so it is not one of the three
 sensors — but it is deterministic, it costs milliseconds, and it fires on every edit, so it belongs
 in the same cheap tier. **The cheap tier is not a category of problem, it is a category of cost.**
+
+## Documentation
+
+Every sensor above watches the code. None of them can read, so the prose beside the code is the one
+artifact in the repo that nothing checks — and the prose is what people copy.
+
+This is not hypothetical. `README.md` in this repo told readers to run `npm start` for months. There
+has never been a `start` script. Four sensors ran on every edit and not one of them could tell.
+
+`scripts/docs-sensor.mjs` closes the cheap half of that. Over every markdown file git tracks, it
+checks two things and no more:
+
+- **every `npm run x`, `npm start`, `npm test` the docs mention has a matching script** in
+  `package.json` — the exact bug above;
+- **every relative link resolves** to a file that exists.
+
+It verifies that claims _exist_; it never runs them. A doc sensor that executed the commands it
+found would be a remote-code-execution hole pointed at your own README.
+
+### Should a sensor be committed, or ignored?
+
+This repo has both. The rule:
+
+> **A sensor ships if it checks something the clone contains. It is gitignored only if it checks
+> something that exists on one machine.**
+
+`.claude/hooks/notes-sensor.sh` is gitignored because it enforces a writing habit against a
+directory that only exists on the author's laptop — useful, and meaningless to you. The
+documentation sensor is committed, because every repository has a README and every README rots.
+A sensor you cannot copy is not a sensor you can adopt.
 
 ## The design sensor, computationally
 

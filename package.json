@@ -6,7 +6,8 @@
   "description": "A text adventure built under three quality sensors.",
   "license": "MIT",
   "scripts": {
-    "check": "npm run typecheck && npm run secret:sensor && npm test && npm run lint:sensor && npm run dup:sensor",
+    "check": "npm run typecheck && npm run secret:sensor && npm test && npm run lint:sensor && npm run dup:sensor && npm run docs:sensor",
+    "docs:sensor": "node scripts/docs-sensor.mjs",
     "dup:sensor": "node scripts/jscpd-sensor.mjs",
     "format": "prettier --ignore-unknown --write .",
     "lint": "eslint .",

@@ -1,5 +1,6 @@
 import { comments } from './guides/comments.mjs';
 import { design } from './guides/design.mjs';
+import { docs } from './guides/docs.mjs';
 import { mechanical } from './guides/mechanical.mjs';
 import { secrets } from './guides/secrets.mjs';
 import { structural } from './guides/structural.mjs';
@@ -10,6 +11,7 @@ export const guides = Object.fromEntries(
     ...structural,
     ...comments,
     ...design,
+    ...docs,
     ...secrets,
     ...types,
     ...mechanical,
@@ -23,6 +25,7 @@ export const kernels = {
   'nondeterministic-domain': 'pass the clock in',
   'mocking-library': 'hand-roll a Fake',
   'leaked-secret': 'rotate it first, then remove it',
+  'stale-doc': 'fix the doc or build the thing',
   'commented-out-code': 'delete it, git remembers',
   'deferred-work': 'do it, or track it properly',
   'long-file': 'decide which kind of big it is',

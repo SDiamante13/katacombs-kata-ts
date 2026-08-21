@@ -1,28 +1,22 @@
-import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { guides, kernels } from '../../scripts/sensor-guides.mjs';
+import { runSensor, scratchSpace } from './sensor-harness.mjs';
 
 const TOKEN = ['ghp', '012345678901234567890123456789abcdxy'].join('_');
-const scratch = mkdtempSync(path.join(tmpdir(), 'gitleaks-sensor-'));
+const scratch = scratchSpace('gitleaks-sensor-');
 
-afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+afterAll(() => scratch.remove());
 
 function sensorOn(target) {
-  const result = spawnSync(process.execPath, ['scripts/gitleaks-sensor.mjs', target], {
-    cwd: path.resolve(),
-    encoding: 'utf8',
-  });
-
-  return { output: result.stdout, status: result.status };
+  return runSensor('scripts/gitleaks-sensor.mjs', target);
 }
 
 function fixture(name, contents) {
-  const directory = mkdtempSync(path.join(scratch, name));
+  const directory = scratch.directory(name);
   writeFileSync(path.join(directory, 'config.ts'), contents);
 
   return directory;

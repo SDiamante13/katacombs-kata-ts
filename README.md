@@ -90,7 +90,7 @@ usually shorter than the argument about whether you need it.
 
 ```sh
 npm install
-npm run check     # typecheck, secrets, tests, structure, duplication — what the hooks run
+npm run check     # typecheck, secrets, tests, structure, duplication, docs — what the hooks run
 npm test          # the tests on their own
 ```
 
