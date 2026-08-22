@@ -7,7 +7,7 @@ import { runSensorsAtOnce, scratchSpace } from './sensor-harness.mjs';
 
 const TOKEN = ['ghp', '012345678901234567890123456789abcdxy'].join('_');
 const scratch = scratchSpace('sensor-concurrency-');
-const ROUNDS = 6;
+const ROUNDS = [1, 2, 3, 4, 5, 6];
 
 afterAll(() => scratch.remove());
 
@@ -39,35 +39,27 @@ function fixture(name, contents) {
 
 // Two sensors sharing one report path read each other's answers.
 describe('two sensor runs overlapping', () => {
-  it('never lets one run answer for another', async () => {
+  it.each(ROUNDS)('never lets one run answer for another, round %i', async () => {
     const leaky = fixture('leak', `export const t = "${TOKEN}";\n`);
     const clean = fixture('clean', 'export const room = "Vault";\n');
-    const rounds = Array.from({ length: ROUNDS }, () => [
+    const [leakyRun, cleanRun] = await runSensorsAtOnce([
       ['scripts/gitleaks-sensor.mjs', leaky],
       ['scripts/gitleaks-sensor.mjs', clean],
     ]);
 
-    for (const pair of rounds) {
-      const [leakyRun, cleanRun] = await runSensorsAtOnce(pair);
-
-      expect(leakyRun.output).toContain('SENSOR gitleaks: FAIL');
-      expect(cleanRun.output).toContain('SENSOR gitleaks: PASS');
-    }
+    expect(leakyRun.output).toContain('SENSOR gitleaks: FAIL');
+    expect(cleanRun.output).toContain('SENSOR gitleaks: PASS');
   });
 
-  it('keeps the duplication sensor honest under the same pressure', async () => {
+  it.each(ROUNDS)('keeps the duplication sensor honest, round %i', async () => {
     const cloned = clones('cloned');
     const single = fixture('single', `${BLOCK}\n`);
-    const rounds = Array.from({ length: ROUNDS }, () => [
+    const [clonedRun, singleRun] = await runSensorsAtOnce([
       ['scripts/jscpd-sensor.mjs', cloned],
       ['scripts/jscpd-sensor.mjs', single],
     ]);
 
-    for (const pair of rounds) {
-      const [clonedRun, singleRun] = await runSensorsAtOnce(pair);
-
-      expect(clonedRun.output).toContain('SENSOR jscpd: FAIL');
-      expect(singleRun.output).toContain('SENSOR jscpd: PASS');
-    }
+    expect(clonedRun.output).toContain('SENSOR jscpd: FAIL');
+    expect(singleRun.output).toContain('SENSOR jscpd: PASS');
   });
 });

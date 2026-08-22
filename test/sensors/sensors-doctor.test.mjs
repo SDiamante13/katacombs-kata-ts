@@ -49,14 +49,8 @@ describe('proving the agent tier actually ran', () => {
     mkdirSync(scratch, { recursive: true });
 
     try {
-      const seconds = Date.now() / 1000;
-      for (const [name, ago] of [
-        ['old.ts', 60],
-        ['new.ts', 0],
-      ]) {
-        writeFileSync(`${scratch}/${name}`, 'x');
-        utimesSync(`${scratch}/${name}`, seconds - ago, seconds - ago);
-      }
+      writeAged(`${scratch}/old.ts`, 60);
+      writeAged(`${scratch}/new.ts`, 0);
 
       const firedBetween = statSync(`${scratch}/old.ts`).mtimeMs + 30_000;
       const verdict = agentTierRan(runtimes(firedBetween), [
@@ -74,3 +68,10 @@ describe('proving the agent tier actually ran', () => {
     expect(agentTierRan(runtimes(stagedAt + 1), ['deleted-file.ts'], now).ok).toBe(true);
   });
 });
+
+function writeAged(file, secondsAgo) {
+  const when = Date.now() / 1000 - secondsAgo;
+
+  writeFileSync(file, 'x');
+  utimesSync(file, when, when);
+}

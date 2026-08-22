@@ -53,10 +53,8 @@ describe('every finding is coached', () => {
     expect(guideForRule('no-debugger').name).toBe('sensor-contract');
   });
 
-  it('gives every guide text and a kernel for its back-reference', () => {
-    for (const name of Object.keys(guides)) {
-      expect(guides[name].length, `${name} has no text`).toBeGreaterThan(0);
-      expect(kernels[name], `${name} has no kernel`).toBeTruthy();
-    }
+  it.each(Object.keys(guides))('gives %s text and a kernel', (name) => {
+    expect(guides[name].length).toBeGreaterThan(0);
+    expect(kernels[name]).toBeTruthy();
   });
 });

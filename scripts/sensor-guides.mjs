@@ -5,6 +5,7 @@ import { docs } from './guides/docs.mjs';
 import { mechanical } from './guides/mechanical.mjs';
 import { secrets } from './guides/secrets.mjs';
 import { structural } from './guides/structural.mjs';
+import { tests } from './guides/tests.mjs';
 import { types } from './guides/types.mjs';
 
 export const guides = Object.fromEntries(
@@ -17,6 +18,7 @@ export const guides = Object.fromEntries(
     ...secrets,
     ...types,
     ...mechanical,
+    ...tests,
   }).map(([name, lines]) => [name, lines.join('\n')]),
 );
 
@@ -26,6 +28,12 @@ export const kernels = {
   'impure-domain': 'take a port, not the world',
   'nondeterministic-domain': 'pass the clock in',
   'mocking-library': 'hand-roll a Fake',
+  'assertion-free-test': 'it passes because nothing threw',
+  'mystery-guest': 'build it in the test, name the setup',
+  'branching-test': 'one test per path',
+  'looping-test': 'it.each, so the failure names the case',
+  'unnamed-arrange': 'a long arrange is a missing name',
+  'interaction-assertion': 'assert the outcome, not the call',
   'leaked-secret': 'rotate it first, then remove it',
   'stale-doc': 'fix the doc or build the thing',
   'broken-behavior': 'green before you measure anything',
@@ -68,6 +76,12 @@ const guideByRule = {
   'sensors/one-line-comment': 'long-comment',
   'sensors/no-stale-reference': 'stale-comment',
   'sensors/no-mocking-library': 'mocking-library',
+  'sensors/no-assertion-free-test': 'assertion-free-test',
+  'sensors/no-mystery-guest': 'mystery-guest',
+  'sensors/no-branching-test': 'branching-test',
+  'sensors/no-looping-test': 'looping-test',
+  'sensors/named-arrange': 'unnamed-arrange',
+  'sensors/no-interaction-assertion': 'interaction-assertion',
   'sensors/no-sensor-suppression': 'sensor-suppression',
   'no-restricted-imports': 'boundary-violation',
   'no-restricted-globals': 'impure-domain',

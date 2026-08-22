@@ -113,7 +113,15 @@ export default defineConfig(
     },
   },
   {
-    files: ['test/**/*.{ts,mjs}'],
-    rules: { 'sensors/no-mocking-library': 'error' },
+    files: ['test/**/*.{ts,mjs,tsx,jsx}'],
+    rules: {
+      'sensors/no-mocking-library': 'error',
+      'sensors/no-assertion-free-test': 'error',
+      'sensors/no-mystery-guest': 'error',
+      'sensors/no-branching-test': 'error',
+      'sensors/no-looping-test': 'error',
+      'sensors/named-arrange': 'error',
+      'sensors/no-interaction-assertion': 'error',
+    },
   },
 );

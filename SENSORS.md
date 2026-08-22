@@ -7,30 +7,32 @@ How each sensor is wired, and which files to copy into your own project.
 
 ## What to copy
 
-| File                                  | Sensor              | Does                                                      | Status  |
-| ------------------------------------- | ------------------- | --------------------------------------------------------- | ------- |
-| `eslint.config.mjs`                   | structural + design | thresholds and type safety; boundary and purity pending   | live    |
-| `scripts/sensor-guides.mjs`           | structural + design | maps a rule id to its guide, with a fallback for the rest | live    |
-| `scripts/guides/`                     | structural + design | the guide text, one file per tier                         | live    |
-| `scripts/eslint-rules/`               | structural          | five rules you write yourself, three of them about prose  | live    |
-| `scripts/sensor-report.mjs`           | all                 | the one `SENSOR x: PASS/FAIL` line every sensor prints    | live    |
-| `scripts/eslint-sensor-formatter.mjs` | structural + design | turns a rule id into a coaching guide                     | live    |
-| `.prettierrc.json`                    | none                | formatting, auto-fixed and never reported                 | live    |
-| `.jscpd.json`                         | structural          | duplication across files                                  | live    |
-| `context/comments.md`                 | structural          | what a comment may be, and which half a sensor can check  | live    |
-| `scripts/jscpd-sensor.mjs`            | structural          | duplication findings, in the same coached format          | live    |
-| `stryker.config.mjs`                  | behavioral          | mutation testing, scoped to changed files                 | pending |
-| `scripts/edit-sensors.mjs`            | trigger             | runs the cheap tier over the files an edit just touched   | live    |
-| `scripts/sensor-tier.mjs`             | trigger             | the `SENSORS` switch that decides which tier owns them    | live    |
-| `scripts/session-ledger.mjs`          | trigger             | the changed-path ledger the Stop hooks will read          | live    |
-| `scripts/worktree-watch.mjs`          | trigger             | catches a file a shell command wrote, which names no path | live    |
-| `scripts/worktree-baseline.mjs`       | trigger             | SessionStart; the one hook both runtimes share unchanged  | live    |
-| `.claude/settings.json`               | trigger             | SessionStart and PostToolUse wiring for Claude Code       | live    |
-| `.claude/hooks/`                      | trigger             | the Claude Code adapter; PreToolUse pending               | live    |
-| `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                             | live    |
-| `.codex/hooks/`                       | trigger             | the Codex adapter                                         | live    |
-| `.claude/skills/design-sensor/`       | design              | the inferential reviewer and its charter                  | pending |
-| `AGENTS.md`                           | contract            | what the agent is told, including sensor integrity        | pending |
+| File                                  | Sensor              | Does                                                       | Status  |
+| ------------------------------------- | ------------------- | ---------------------------------------------------------- | ------- |
+| `eslint.config.mjs`                   | structural + design | thresholds and type safety; boundary and purity pending    | live    |
+| `scripts/sensor-guides.mjs`           | structural + design | maps a rule id to its guide, with a fallback for the rest  | live    |
+| `scripts/guides/`                     | structural + design | the guide text, one file per tier                          | live    |
+| `scripts/eslint-rules/`               | structural          | eleven rules you write yourself, three of them about prose | live    |
+| `scripts/guides/tests.mjs`            | test design         | the guides for the six test-design rules                   | live    |
+| `context/wet-tests.md`                | test design         | why the test rules pull against the duplication sensor     | live    |
+| `scripts/sensor-report.mjs`           | all                 | the one `SENSOR x: PASS/FAIL` line every sensor prints     | live    |
+| `scripts/eslint-sensor-formatter.mjs` | structural + design | turns a rule id into a coaching guide                      | live    |
+| `.prettierrc.json`                    | none                | formatting, auto-fixed and never reported                  | live    |
+| `.jscpd.json`                         | structural          | duplication across files                                   | live    |
+| `context/comments.md`                 | structural          | what a comment may be, and which half a sensor can check   | live    |
+| `scripts/jscpd-sensor.mjs`            | structural          | duplication findings, in the same coached format           | live    |
+| `stryker.config.mjs`                  | behavioral          | mutation testing, scoped to changed files                  | pending |
+| `scripts/edit-sensors.mjs`            | trigger             | runs the cheap tier over the files an edit just touched    | live    |
+| `scripts/sensor-tier.mjs`             | trigger             | the `SENSORS` switch that decides which tier owns them     | live    |
+| `scripts/session-ledger.mjs`          | trigger             | the changed-path ledger the Stop hooks will read           | live    |
+| `scripts/worktree-watch.mjs`          | trigger             | catches a file a shell command wrote, which names no path  | live    |
+| `scripts/worktree-baseline.mjs`       | trigger             | SessionStart; the one hook both runtimes share unchanged   | live    |
+| `.claude/settings.json`               | trigger             | SessionStart and PostToolUse wiring for Claude Code        | live    |
+| `.claude/hooks/`                      | trigger             | the Claude Code adapter; PreToolUse pending                | live    |
+| `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                              | live    |
+| `.codex/hooks/`                       | trigger             | the Codex adapter                                          | live    |
+| `.claude/skills/design-sensor/`       | design              | the inferential reviewer and its charter                   | pending |
+| `AGENTS.md`                           | contract            | what the agent is told, including sensor integrity         | pending |
 
 ## The structural sensor
 
@@ -355,6 +357,53 @@ is not a sensor.**
 
 For what this tier is pointed at and what it deliberately leaves alone, see
 [`context/mutation-scope.md`](context/mutation-scope.md).
+
+## Test design, computationally
+
+Most of test design needs judgment, and that half belongs to the design sensor's charter. These six
+things do not. They cost the same milliseconds as the other cheap-tier rules and fire on the same
+edit, scoped to `test/**`.
+
+| Rule                               | Fires when                                                   |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `sensors/no-assertion-free-test`   | a test body contains no assertion at all                     |
+| `sensors/no-mystery-guest`         | a hook fills a shared binding the test then asserts on       |
+| `sensors/no-branching-test`        | `if`, `switch` or a ternary inside a test body               |
+| `sensors/no-looping-test`          | a loop inside a test body — the failure cannot name the case |
+| `sensors/named-arrange`            | more than eight statements before the test asserts anything  |
+| `sensors/no-interaction-assertion` | `toHaveBeenCalled…` and friends — asserting how, not what    |
+
+They share one rule, and it is worth stating before the individual ones:
+
+> **Nothing the test asserts on may be invisible from the test body.**
+
+That is Arlo Belshee's argument, compiled: product code is DRY, test code is **WET** — write explicit
+tests, because you should understand a test without looking up the definition of anything it calls.
+It sounds like it forbids helpers and builders, and it does not; the reconciliation is in
+[`context/wet-tests.md`](context/wet-tests.md), along with why the duplication sensor and these rules
+are not in conflict.
+
+An assertion, to these rules, is `expect(…)`, `assert(…)`, or a call whose name begins with `then`,
+`should`, or `verify`. That is deliberate: `await thenUserSeesWatchlistRow({ symbol: 'AAPL' })` is an
+assertion written as a sentence, and a rule that could not see it would push you away from the style
+it is meant to protect.
+
+`named-arrange` is the one with a threshold, and eight is a first calibration rather than a settled
+number. The fix it wants is a name — a Test Data Builder for the values, a `given…` helper for the
+arranging, defined in the same file below the tests. The fix it does not want is a `beforeEach`,
+which lowers the count by making the setup invisible, and the mystery-guest rule is there to say so.
+
+### What it found on this repository
+
+Turned on against twenty-four existing test files, it reported four findings, all loops. Three
+became `it.each`, so a failing case now names itself; one was setup rather than assertion, and became
+a named helper — which is exactly the move `named-arrange` exists to ask for.
+
+One of those fixes went wrong first, and the failure is the interesting part. Rewriting a
+concurrency test to satisfy the new rule quietly dropped it from six probabilistic rounds to one —
+**a test weakened to make a sensor go quiet**, which is the move every guide in this repository ends
+by warning against. The unused-variable rule caught the leftover constant, which is the only reason
+it did not ship. The six rounds are now six named cases.
 
 ## The design sensor, computationally
 

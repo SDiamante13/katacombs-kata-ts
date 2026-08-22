@@ -26,6 +26,7 @@ Do not write the same claim twice in a form that cannot fail.
 | [`test-isolation.md`](test-isolation.md)                                   | Why test files do not run in parallel, and what it would take to change that                        |
 | [`red-green-and-the-per-edit-tier.md`](red-green-and-the-per-edit-tier.md) | Why the per-edit tier says nothing about unused parameters                                          |
 | [`mutation-scope.md`](mutation-scope.md)                                   | Why mutation testing looks only at `src/` and only at what changed                                  |
+| [`wet-tests.md`](wet-tests.md)                                             | Why the test rules ask for repetition the duplication sensor would object to                        |
 | [`comments.md`](comments.md)                                               | What a comment is allowed to be here, and which half of that a sensor can check                     |
 
 Pages are named for what they explain, not numbered. This is not a decision log — a decision record
