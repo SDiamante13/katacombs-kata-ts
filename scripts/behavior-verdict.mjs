@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 
 import { behaviorReport, summarise, unavailableReport } from './behavior-findings.mjs';
-import { markReportStale, viewablePath } from './mutation-run.mjs';
+import { markReportStale, reportStamp, viewablePath } from './mutation-run.mjs';
 import { sensorReport } from './sensor-report.mjs';
 
 const SKIP_REPORT = [
@@ -13,21 +13,27 @@ const SKIP_REPORT = [
 ].join('\n');
 
 function trailer(findings) {
-  const fromMutation = findings.some((finding) => finding.rule.startsWith('mutant-'));
+  const fromMutation = findings.some((finding) => finding.rule.startsWith('mutant'));
+  const stamp = reportStamp();
 
-  if (!fromMutation || !existsSync(viewablePath)) return '';
+  if (!fromMutation || !existsSync(viewablePath) || !stamp) return '';
 
-  return '\nEvery mutant, killed and surviving: npm run behavior:report\n';
+  return `\nEvery mutant, killed and surviving, for ${stamp.files.join(', ')}: npm run behavior:report\n`;
 }
 
 function accounting(report) {
   return report ? `${summarise(report)}\n` : '';
 }
 
-export function skipped() {
-  markReportStale();
+export function skipped(startedAt, note = null) {
+  markReportStale(startedAt);
 
-  return { outcome: 'skip', passed: true, findings: [], report: SKIP_REPORT };
+  return {
+    outcome: 'skip',
+    passed: true,
+    findings: [],
+    report: note ? `${SKIP_REPORT}  ${note}\n` : SKIP_REPORT,
+  };
 }
 
 export function passing(report, note = null) {
@@ -41,8 +47,8 @@ export function passing(report, note = null) {
   };
 }
 
-export function failing(findings, report = null) {
-  if (report === null) markReportStale();
+export function failing(findings, report = null, startedAt = null) {
+  if (report === null) markReportStale(startedAt);
 
   return {
     outcome: 'fail',
@@ -52,8 +58,8 @@ export function failing(findings, report = null) {
   };
 }
 
-export function unavailable(findings) {
-  markReportStale();
+export function unavailable(findings, startedAt = null) {
+  markReportStale(startedAt);
 
   return {
     outcome: 'unavailable',

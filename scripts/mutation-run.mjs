@@ -23,6 +23,8 @@ const strykerBin = path.join(
 
 const mutationRoot = path.join(projectRoot, 'reports', 'mutation');
 const strykerRoot = path.join(projectRoot, '.stryker-tmp');
+
+const MUTATION_BUDGET = 90_000;
 const runRoot = path.join(mutationRoot, String(process.pid));
 
 export const viewablePath = path.join(mutationRoot, 'mutation.html');
@@ -73,31 +75,64 @@ function sweepStaleRuns() {
   reapDeadPids(strykerRoot);
 }
 
+// Written beside, then renamed: a reader never sees half a stamp.
+function writeStamp(stamp) {
+  const beside = `${stampPath}.${process.pid}`;
+
+  try {
+    writeFileSync(beside, JSON.stringify(stamp));
+    renameSync(beside, stampPath);
+  } catch {
+    rmSync(beside, { force: true });
+  }
+}
+
 function publishReport(files, at) {
   const produced = path.join(runRoot, 'mutation.html');
 
   if (existsSync(produced)) renameSync(produced, viewablePath);
-  writeFileSync(stampPath, JSON.stringify({ at, files, current: true }));
+  writeStamp({ at, files, run: process.pid, current: true });
   rmSync(runRoot, { recursive: true, force: true });
 }
 
-// A run that stops before mutation leaves a report about a different change.
-export function markReportStale() {
-  if (!existsSync(stampPath)) return;
+function readJson(file) {
+  if (!existsSync(file)) return null;
 
-  const stamp = JSON.parse(readFileSync(stampPath, 'utf8'));
-
-  writeFileSync(stampPath, JSON.stringify({ ...stamp, current: false }));
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return null;
+  }
 }
 
 export function reportStamp() {
-  return existsSync(stampPath) ? JSON.parse(readFileSync(stampPath, 'utf8')) : null;
+  return readJson(stampPath);
+}
+
+// Only its own report: a slow run must not mark a newer one stale.
+export function markReportStale(startedAt) {
+  const stamp = reportStamp();
+
+  if (!stamp || stamp.current === false) return;
+  if (startedAt && stamp.at > startedAt) return;
+
+  writeStamp({ ...stamp, current: false });
 }
 
 export function runMutation(files, run = node) {
   sweepStaleRuns();
-  const { output } = run([strykerBin, 'run', writeRunConfig(files)]);
+  const { output, timedOut } = run(
+    [strykerBin, 'run', writeRunConfig(files)],
+    {},
+    MUTATION_BUDGET,
+  );
   const produced = path.join(runRoot, 'mutation.json');
+
+  if (timedOut) {
+    rmSync(runRoot, { recursive: true, force: true });
+
+    return { tooSlow: MUTATION_BUDGET / 1000 };
+  }
 
   if (!existsSync(produced)) {
     rmSync(runRoot, { recursive: true, force: true });
@@ -105,7 +140,14 @@ export function runMutation(files, run = node) {
     return { crashed: output };
   }
 
-  const report = JSON.parse(readFileSync(produced, 'utf8'));
+  const report = readJson(produced);
+
+  if (report === null) {
+    rmSync(runRoot, { recursive: true, force: true });
+
+    return { crashed: `${output}\n\nThe mutation report was unreadable.` };
+  }
+
   publishReport(files, new Date().toISOString());
 
   return { report };

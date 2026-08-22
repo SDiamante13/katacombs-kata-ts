@@ -64,15 +64,21 @@ some of them would be stale. Speed we already have is not worth an answer we wou
 
 ## What it actually costs
 
-Measured, not estimated: about 0.06s when nothing it watches changed, ~1.2s when it stops at a red
-suite, ~6s for one well-covered file, ~7.5s for three. Roughly five seconds of that is fixed —
-typecheck, sandbox, baseline test run — and the marginal cost is a test run per _covered_ mutant, so
-a file with 442 mutants of which 429 are uncovered costs about the same as one with 30 that are all
-covered.
+Measured as the median of three runs on an idle ten-core machine, not estimated: 0.06s when nothing
+it watches changed, 1.2s stopping at a red suite, 6.0s for one well-covered file, 7.5s for three,
+6.7s for ten small ones, 7.9s for a file with 442 mutants of which 429 are uncovered — and **33s for
+ten files of five fully-covered functions each, 700 mutants.**
 
-The ceiling is held down by a sensor in another tier. Mutation cost tracks branching, and
-`complexity: 5` will not let a branch-heavy function exist in the first place. If you copy this tier
-without the structural thresholds, expect the right-hand column to look very different.
+That last row is the one that matters. About four seconds is fixed and the rest scales with the
+mutants the tests _cover_, so the cheap-looking rows are cheap because their mutants are uncovered,
+not because the tier is fast. A well-covered change is the expensive one.
+
+`complexity: 5` bounds the mutants in a single function and says nothing about how many functions a
+change touches, so the structural tier does not bound this tier's cost per turn. An earlier version
+of this page claimed it did, and a battle-test agent measured it false. The bounds that do hold are
+this tier's own: it refuses past 25 changed source files, and kills the mutation run at 90 seconds.
+Those two numbers encode how long a pause you are willing to take, and they are the first thing to
+reconsider if you copy this.
 
 ## A report path per run
 

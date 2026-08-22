@@ -19,6 +19,16 @@ export const behavioral = {
     'Fix what is listed below, then the behavioral tier runs on its own at the end of the next turn.',
     'Not this: reaching for the expensive sensor first because its findings sound more interesting. Cheap, then expensive, is the whole shape of the loop.',
   ],
+  'scope-too-large': [
+    'This change is larger than the end-of-turn budget. Mutating all of it would take minutes, and a sensor that takes minutes at the end of every turn is a sensor that gets switched off.',
+    'Run `npm run check` on the whole change when you are ready to commit it — the commit gate has the time this tier does not. If the change is large because it is several changes, that is the finding underneath this one.',
+    'Not this: raising the threshold so the tier goes quiet. The cost is real, and the number is where it is because that is what fits in a pause.',
+  ],
+  'unreadable-scope': [
+    'Something named a path as source that this tier cannot read as source — most often an extension with a suffix after it, such as a mutation range or a backup name.',
+    'Name the file itself. A path the sensor cannot read is a path it did not check, and it will not report a pass over one.',
+    'Not this: dropping the argument and letting the sensor work the scope out for itself. That hides which file you meant.',
+  ],
   'broken-types': [
     'The compiler rejects this code. The tests can still be green while it does — vitest strips types rather than checking them, so a type error sails through a passing suite and surfaces at the build.',
     'Fix it where the type is wrong, not where the error is reported. An error at a call site is usually a signature one file away that no longer says what the function does.',
@@ -37,7 +47,7 @@ export const behavioral = {
   'mutant-survived': [
     'A mutant survived: this expression was changed into something with different behaviour, the whole suite ran, and nothing failed. That is a finding about your tests, not your code — some test executes this line and does not care what it produces.',
     'Find the test that covers it and ask what it actually asserts. The usual causes are asserting that a call did not throw, asserting on a shape rather than a value, asserting a substring loose enough to survive the change, or an expectation written after the fact from the output the code happened to produce.',
-    'Then assert the behaviour the mutant broke. One example either side of a boundary kills comparison mutants; asserting the whole returned value kills the literal ones. If writing that assertion is awkward, the design is telling you the function returns more than one thing.',
+    'Then assert the behaviour the mutant broke. For a comparison, assert the boundary value itself and one value past it — examples either side of the boundary leave a `<=` mutated to `<` alive, because both agree everywhere except on the boundary. Asserting the whole returned value kills the literal ones. If writing that assertion is awkward, the design is telling you the function returns more than one thing.',
     'Not this: deleting the line the mutant landed on, narrowing the mutator set, or adding a test that repeats an assertion you already have. The mutant is a question about what the code is for — answer it.',
   ],
   'mutant-uncovered': [

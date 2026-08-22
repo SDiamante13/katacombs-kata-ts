@@ -16,17 +16,27 @@ function records() {
   return (seen.stdout ?? '').split('\0').filter(Boolean);
 }
 
-export function dirtyPaths() {
+export function changes() {
   const entries = records();
-  const paths = [];
+  const seen = [];
 
   for (let index = 0; index < entries.length; index += 1) {
     const entry = entries[index];
 
-    paths.push(entry.slice(3));
+    seen.push({ status: entry.slice(0, 2), path: entry.slice(3) });
     // A rename spends a second record on the path it came from.
     if (RENAMED.test(entry.slice(0, 2))) index += 1;
   }
 
-  return paths;
+  return seen;
+}
+
+export function dirtyPaths() {
+  return changes().map((change) => change.path);
+}
+
+export function deletedPaths() {
+  return changes()
+    .filter((change) => change.status.includes('D'))
+    .map((change) => change.path);
 }

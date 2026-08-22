@@ -4,7 +4,6 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { ledgerPath, record } from '../../scripts/session-ledger.mjs';
-import { fingerprint, shouldPushBack } from '../../scripts/stop-continuation.mjs';
 import { stopResponse } from '../../scripts/stop-response.mjs';
 import { fireHook } from './sensor-harness.mjs';
 
@@ -92,39 +91,6 @@ describe('what the Stop hook answers', () => {
   });
 });
 
-describe('the guard against a Stop loop', () => {
-  afterEach(forget);
-
-  const finding = [{ rule: 'mutant-survived', where: 'src/a.ts:2:7' }];
-
-  it('reads the same findings in any order as one push-back', () => {
-    const swapped = [...finding, { rule: 'mutant-uncovered', where: 'src/a.ts:9' }];
-
-    expect(fingerprint(swapped)).toBe(fingerprint([...swapped].reverse()));
-  });
-
-  it('pushes back once per set of findings, not once per turn', () => {
-    expect(shouldPushBack(session, finding)).toBe(true);
-    expect(shouldPushBack(session, finding)).toBe(false);
-  });
-
-  it('pushes back again when the findings change', () => {
-    shouldPushBack(session, finding);
-
-    expect(
-      shouldPushBack(session, [{ rule: 'mutant-uncovered', where: 'src/b.ts:4' }]),
-    ).toBe(true);
-  });
-
-  it('gives up after three, whatever the agent does next', () => {
-    const answers = Array.from({ length: 5 }, (_, index) =>
-      shouldPushBack(session, [{ rule: 'mutant-survived', where: `src/a.ts:${index}` }]),
-    );
-
-    expect(answers).toEqual([true, true, true, false, false]);
-  });
-});
-
 describe('the Stop hook against a real turn', () => {
   afterEach(forget);
 
@@ -167,5 +133,18 @@ describe('the Stop hook against a real turn', () => {
 
     expect(status).toBe(0);
     expect(out).toBe('');
+  });
+});
+
+describe('the hook when the sensors are switched off', () => {
+  it('says out loud that it has been disabled', () => {
+    const { err, status } = fireHook(
+      'scripts/stop-sensor.mjs',
+      { session_id: session },
+      { SENSORS: 'git' },
+    );
+
+    expect(status).toBe(0);
+    expect(err).toContain('SENSORS=git');
   });
 });

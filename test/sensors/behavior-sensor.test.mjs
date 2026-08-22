@@ -83,15 +83,43 @@ describe('what the behavioral tier looks at', () => {
     expect(scopeOf(['../elsewhere/thing.ts', '/etc/passwd.ts']).tests).toEqual([]);
   });
 
-  it('keeps a file the change deleted, so its tests still run', () => {
-    expect(scopeOf(['src/deleted-by-this-change.ts']).gone).toEqual([
-      'src/deleted-by-this-change.ts',
+  it('keeps a file git says the change deleted, so its tests still run', () => {
+    const removed = ['src/deleted-by-this-change.ts'];
+
+    expect(scopeOf(removed, removed).gone).toEqual(removed);
+  });
+
+  it('refuses to call a path deleted when git never knew it', () => {
+    const scope = scopeOf(['src/never-existed.ts'], []);
+
+    expect(scope.gone).toEqual([]);
+    expect(scope.unknown).toEqual(['src/never-existed.ts']);
+  });
+
+  it('will not read a path with a mutation range stuck on the end', () => {
+    expect(scopeOf(['src/cave.ts:1:1-1:2'], []).malformed).toEqual([
+      'src/cave.ts:1:1-1:2',
     ]);
   });
 });
 
 describe('the sensor against a real mutation run', () => {
   afterEach(uproot);
+
+  it('says which named paths it could not find, instead of inventing a deletion', () => {
+    const verdict = examine(['src/never-existed.ts']);
+
+    expect(verdict.outcome).toBe('skip');
+    expect(verdict.report).toContain('git has no record of deleting them');
+    expect(verdict.report).not.toContain('deleted a source file');
+  });
+
+  it('fails rather than passes on a path it cannot read as source', () => {
+    const verdict = examine(['src/cave.ts:1:1-1:2']);
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.report).toContain('unreadable-scope');
+  });
 
   it('says it checked nothing rather than reporting a pass', () => {
     const verdict = examine(['README.md', 'scripts/behavior-sensor.mjs']);

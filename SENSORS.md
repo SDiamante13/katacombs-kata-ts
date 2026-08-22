@@ -247,23 +247,43 @@ assertion — a flat tail of the output drops the first one, which is usually th
 
 ### What it costs
 
-Measured on this repository, on a ten-core machine, three runs each:
+Median of three runs each, on an idle ten-core machine:
 
-| Change                                     | Wall clock |
-| ------------------------------------------ | ---------- |
-| Nothing it watches changed                 | **~0.06s** |
-| Related tests are red (stops at stage 2)   | **~1.2s**  |
-| One small file, 10 mutants, well covered   | **~6s**    |
-| Three files, 30 mutants, well covered      | **~7.5s**  |
-| One file, 442 mutants, almost none covered | **~8s**    |
+| Change                                        | Mutants | Wall clock |
+| --------------------------------------------- | ------- | ---------- |
+| Nothing it watches changed                    | —       | **0.06s**  |
+| Related tests are red (stops at stage 2)      | —       | **1.2s**   |
+| One small file, well covered                  | 10      | **6.0s**   |
+| Three files, well covered                     | 30      | **7.5s**   |
+| Ten small files, well covered                 | 140     | **6.7s**   |
+| One file, almost nothing covered              | 442     | **7.9s**   |
+| Ten files, five functions each, fully covered | 700     | **33s**    |
 
-About five seconds of that is fixed — typecheck, sandbox build, and the baseline test run — and the
-marginal cost is roughly a test run per _covered_ mutant. Uncovered mutants are nearly free, which
-is why the 442-mutant row is not fifty times the 10-mutant one.
+The model, and it is worth stating precisely because the obvious guess is wrong: about four seconds
+is fixed, and **the rest scales with the mutants your tests actually cover** — very roughly
+0.03–0.09 seconds each, shared across cores and sensitive to what else the machine is doing.
+Uncovered mutants are nearly free, which is why the 442-mutant row costs less than the 30-mutant
+one. A well-covered change is the expensive kind, which is the right way round: the tier costs most
+where it has most to say.
 
-Note what holds the right-hand column down: the structural sensor. A branch-heavy function is
-exactly what makes mutation testing slow, and `complexity: 5` refuses to let one exist. The cheap
-tier is paying for the expensive tier's trigger.
+Note what this does **not** say. `complexity: 5` caps how many mutants a single _function_ can have;
+it says nothing about how many functions a change touches. The structural tier bounds the worst case
+per unit, not per turn. So this tier bounds itself, twice:
+
+- more than 25 changed source files, and it refuses before starting;
+- more than 90 seconds mutating, and it stops and says so.
+
+Both come back as `scope-too-large`, pointing at `npm run check` — the commit gate has time this
+tier does not. Raising either number is a decision about how long a pause you will tolerate, not a
+detail.
+
+The hung-test case has its own bound: the test stage is killed at 120 seconds, and the product's own
+suite sets `testTimeout` to 10 seconds in `vitest.mutation.config.ts` so one stuck test fails rather
+than waits. This repository's _sensor_ tests are allowed 30 seconds, because they spawn real linters
+and real mutation runs, which is a fact about them rather than a slackening.
+
+This is the end-of-turn cost, not the commit cost. `npm run check` runs the whole suite and takes
+about eighty seconds here, almost all of it those sensor tests.
 
 ### Why it fires when the agent stops
 

@@ -8,7 +8,14 @@ import { dirtyPaths } from './git-changes.mjs';
 import { runMutation } from './mutation-run.mjs';
 import { node } from './node-runner.mjs';
 import { changedThisSession } from './session-ledger.mjs';
-import { brokenBehavior, brokenTypes, mutationUnavailable } from './stage-findings.mjs';
+import {
+  brokenBehavior,
+  brokenTypes,
+  mutationUnavailable,
+  tooManyFiles,
+  tookTooLong,
+  unreadableScope,
+} from './stage-findings.mjs';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const vitestBin = path.join(projectRoot, 'node_modules', 'vitest', 'vitest.mjs');
@@ -17,6 +24,8 @@ const tscBin = path.join(projectRoot, 'node_modules', 'typescript', 'bin', 'tsc'
 export { viewablePath } from './mutation-run.mjs';
 
 const PLAIN = { NO_COLOR: '1', FORCE_COLOR: '0' };
+const MOST_FILES = 25;
+const TEST_BUDGET = 120_000;
 
 function typeErrors() {
   const { output, status } = node([tscBin, '--noEmit'], PLAIN);
@@ -34,10 +43,17 @@ function testArguments(scope) {
 }
 
 function runTests(scope) {
-  const { output, status } = node([...testArguments(scope), '--passWithNoTests'], PLAIN);
+  const { output, status, timedOut } = node(
+    [...testArguments(scope), '--passWithNoTests'],
+    PLAIN,
+    TEST_BUDGET,
+  );
+  const stalled = timedOut
+    ? `${output}\n\nThe test run did not finish within ${TEST_BUDGET / 1000}s and was killed.`
+    : null;
 
   return {
-    failed: status === 0 ? null : output,
+    failed: status === 0 && !timedOut ? null : (stalled ?? output),
     ranNothing: output.includes('No test files found'),
   };
 }
@@ -51,24 +67,48 @@ function nothingMutated(scope) {
   return `${ran}; no source under src/ changed, so no mutants were made.`;
 }
 
-function beforeMutation(scope) {
-  const types = typeErrors();
+function unknownNote(scope) {
+  if (scope.unknown.length === 0) return null;
 
-  if (types !== null) return failing([brokenTypes(types)]);
+  return `Named but not on disk, and git has no record of deleting them: ${scope.unknown.join(', ')}.`;
+}
 
-  const tests = runTests(scope);
-
-  if (tests.failed !== null) return failing([brokenBehavior(tests.failed)]);
-  // Stryker cannot mutate what no test imports; it errors instead of reporting.
-  if (tests.ranNothing && scope.mutated.length > 0) {
-    return failing(scope.mutated.map(untestedSource));
+function refusals(scope, startedAt) {
+  if (scope.malformed.length > 0) {
+    return failing([unreadableScope(scope.malformed)], null, startedAt);
+  }
+  if (scope.tests.length === 0 && scope.gone.length === 0) {
+    return skipped(startedAt, unknownNote(scope));
+  }
+  if (scope.mutated.length > MOST_FILES) {
+    return failing([tooManyFiles(scope.mutated)], null, startedAt);
   }
 
   return null;
 }
 
-function afterMutation(outcome) {
-  if (outcome.crashed) return unavailable([mutationUnavailable(outcome.crashed)]);
+function beforeMutation(scope, startedAt) {
+  const types = typeErrors();
+
+  if (types !== null) return failing([brokenTypes(types)], null, startedAt);
+
+  const tests = runTests(scope);
+
+  if (tests.failed !== null)
+    return failing([brokenBehavior(tests.failed)], null, startedAt);
+  // Stryker cannot mutate what no test imports; it errors instead of reporting.
+  if (tests.ranNothing && scope.mutated.length > 0) {
+    return failing(scope.mutated.map(untestedSource), null, startedAt);
+  }
+
+  return null;
+}
+
+function afterMutation(outcome, startedAt) {
+  if (outcome.tooSlow) return failing([tookTooLong(outcome.tooSlow)], null, startedAt);
+  if (outcome.crashed) {
+    return unavailable([mutationUnavailable(outcome.crashed)], startedAt);
+  }
 
   const findings = behaviorFindings(outcome.report);
 
@@ -78,16 +118,18 @@ function afterMutation(outcome) {
 }
 
 export function examine(changed) {
+  const startedAt = new Date().toISOString();
   const scope = scopeOf(changed);
+  const refused = refusals(scope, startedAt);
 
-  if (scope.tests.length === 0 && scope.gone.length === 0) return skipped();
+  if (refused !== null) return refused;
 
-  const stopped = beforeMutation(scope);
+  const stopped = beforeMutation(scope, startedAt);
 
   if (stopped !== null) return stopped;
   if (scope.mutated.length === 0) return passing(null, nothingMutated(scope));
 
-  return afterMutation(runMutation(scope.mutated));
+  return afterMutation(runMutation(scope.mutated), startedAt);
 }
 
 export function requestedScope(argv, session) {

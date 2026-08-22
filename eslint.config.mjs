@@ -22,6 +22,9 @@ const maintainabilityRules = {
   'max-params': ['error', 4],
   'max-depth': ['error', 2],
   'max-statements': ['error', 15],
+  // A statement that computes nothing is how a parameter stops being dead code.
+  'no-unused-expressions': ['error', { allowShortCircuit: false, allowTernary: false }],
+  'no-void': 'error',
 };
 
 const commentRules = {
