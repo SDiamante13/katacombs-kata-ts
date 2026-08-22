@@ -85,3 +85,18 @@ describe('a source file no test has heard of', () => {
     expect(reportStamp()?.current ?? false).toBe(false);
   }, 120_000);
 });
+
+describe('a suite where every test is skipped', () => {
+  afterEach(uproot);
+
+  const SKIPPED = WEAK.replace("it('answers something'", "it.skip('answers something'");
+
+  it('is treated as no test at all, not as green', () => {
+    plant(SKIPPED);
+
+    const verdict = examine([source]);
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.report).toContain('untested-source');
+  }, 120_000);
+});

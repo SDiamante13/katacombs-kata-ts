@@ -45,6 +45,12 @@ Two exclusions, both stated here rather than left to be discovered:
   project. That part is deliberate: a program that does not compile is not a program whose tests
   mean anything.
 
+- **`SENSORS=git` switches this tier off entirely** for the agent loop, leaving the commit hook as
+  the only gate. The hook says so on stderr when it happens, and `npm run sensors:doctor` reports
+  whether that commit hook is actually installed. Treating the environment variable itself as a
+  finding belongs to the tamper sensor, which is a separate piece of work — an agent that can set
+  `SENSORS` can also edit the config, and one guard for both is better than two half-guards.
+
 - **`SKIP` exits 0, the same as a pass.** Deliberate, and the reason is the commit gate: `npm run
 check` runs this sensor, and most commits change no source under `src/`. An exit code that
   distinguished "nothing to check" from "checked and clean" would fail every documentation commit
@@ -80,6 +86,26 @@ This is not fixed, and it is worth being explicit about why. `SIGKILL` cannot be
 only defence is a process group the killer chooses to signal — which is the caller's decision, not
 ours. What the sensor can control it does: the work is per-pid, so an orphan cannot corrupt a later
 run's answer, and the sweep means it cannot accumulate either.
+
+## The evasion this tier cannot close
+
+Mutation testing measures the tests against the code that is there. It has nothing to say about code
+that is no longer there. So an agent that deletes the branch a surviving mutant landed on gets a
+clean PASS, and **the sensor cannot tell that from a legitimate removal of dead code** — because at
+the level it operates, there is no difference.
+
+Three things narrow it, and none of them close it:
+
+- The accounting line makes the collapse visible. A file that had thirty mutants last turn and has
+  four this turn is saying something, to a reader.
+- `no-void` and `no-unused-expressions` close the cheap version, where a parameter is kept alive by
+  a statement that computes nothing.
+- The other sensors still see the deletion: it is a diff, and the design sensor reviews diffs.
+
+What would actually close it is a check outside this tier — comparing a file's mutant count against
+its last recorded one, and treating a large unexplained drop as a finding. That is a different
+sensor with a different trigger, and it is not built. **A known hole named in the documentation is a
+different thing from a known hole nobody wrote down.**
 
 ## No incremental mode
 

@@ -26,6 +26,8 @@ export { viewablePath } from './mutation-run.mjs';
 const PLAIN = { NO_COLOR: '1', FORCE_COLOR: '0' };
 const MOST_FILES = 25;
 const TEST_BUDGET = 120_000;
+// Every test skipped exits 0 and asserts nothing, which is not a green suite.
+const ALL_SKIPPED = /Tests\s+(\d+) skipped \(\1\)/;
 
 function typeErrors() {
   const { output, status } = node([tscBin, '--noEmit'], PLAIN);
@@ -42,19 +44,28 @@ function testArguments(scope) {
   return [vitestBin, 'related', ...scope.tests, '--run'];
 }
 
+// A suite where every test is skipped exits 0 and asserts nothing.
+function nothingRan(output) {
+  return output.includes('No test files found') || ALL_SKIPPED.test(output);
+}
+
+function stalled(output, timedOut) {
+  if (!timedOut) return null;
+
+  return `${output}\n\nThe test run did not finish within ${TEST_BUDGET / 1000}s and was killed.`;
+}
+
 function runTests(scope) {
   const { output, status, timedOut } = node(
     [...testArguments(scope), '--passWithNoTests'],
     PLAIN,
     TEST_BUDGET,
   );
-  const stalled = timedOut
-    ? `${output}\n\nThe test run did not finish within ${TEST_BUDGET / 1000}s and was killed.`
-    : null;
+  const late = stalled(output, timedOut);
 
   return {
-    failed: status === 0 && !timedOut ? null : (stalled ?? output),
-    ranNothing: output.includes('No test files found'),
+    failed: status === 0 && late === null ? null : (late ?? output),
+    ranNothing: nothingRan(output),
   };
 }
 
