@@ -1,6 +1,7 @@
-import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+
+import { node } from './node-runner.mjs';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const eslintBin = path.join(projectRoot, 'node_modules', 'eslint', 'bin', 'eslint.js');
@@ -16,18 +17,6 @@ const LINTABLE = /\.(js|mjs|ts)$/;
 const CLONE_SCANNED = /^(src|test|scripts)\//;
 const OUT_OF_SCOPE =
   /^(node_modules|reports|dist|build|coverage|\.stryker-tmp|docs|capture)(\/|$)/;
-
-function node(args) {
-  const result = spawnSync(process.execPath, args, {
-    cwd: projectRoot,
-    encoding: 'utf8',
-  });
-
-  return {
-    output: [result.stdout, result.stderr].filter(Boolean).join('').trim(),
-    status: result.status,
-  };
-}
 
 function inScope(file) {
   const relative = path.relative(projectRoot, path.resolve(projectRoot, file));
