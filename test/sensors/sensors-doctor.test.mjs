@@ -1,4 +1,4 @@
-import { statSync } from 'node:fs';
+import { mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
@@ -44,6 +44,36 @@ describe('proving the agent tier actually ran', () => {
     expect(agentTierRan(runtimes(null, stagedAt + 1), ['package.json'], now).ok).toBe(
       true,
     );
+  });
+
+  // A hook that fired once early in a session, before four more files were
+  // written through a path it missed, must not clear the whole commit. The
+  // comparison is against the NEWEST staged file, and a fixture with one file
+  // -- or two sharing a timestamp -- cannot tell min from max.
+  it('refuses when only some of the staged work predates the hook run', () => {
+    const scratch = 'test/.scratch/doctor';
+    mkdirSync(scratch, { recursive: true });
+
+    try {
+      const seconds = Date.now() / 1000;
+      for (const [name, ago] of [
+        ['old.ts', 60],
+        ['new.ts', 0],
+      ]) {
+        writeFileSync(`${scratch}/${name}`, 'x');
+        utimesSync(`${scratch}/${name}`, seconds - ago, seconds - ago);
+      }
+
+      const firedBetween = statSync(`${scratch}/old.ts`).mtimeMs + 30_000;
+      const verdict = agentTierRan(runtimes(firedBetween), [
+        `${scratch}/old.ts`,
+        `${scratch}/new.ts`,
+      ]);
+
+      expect(verdict.ok).toBe(false);
+    } finally {
+      rmSync('test/.scratch', { recursive: true, force: true });
+    }
   });
 
   it('ignores staged paths that no longer exist', () => {

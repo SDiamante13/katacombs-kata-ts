@@ -80,25 +80,25 @@ function stagedFiles() {
   return (staged.stdout ?? '').split('\n').filter(Boolean);
 }
 
-function oldestStagedAt(files) {
+function newestStagedAt(files) {
   const times = files
     .map((file) => path.join(projectRoot, file))
     .filter((full) => existsSync(full))
     .map((full) => statSync(full).mtimeMs);
 
-  return times.length === 0 ? null : Math.min(...times);
+  return times.length === 0 ? null : Math.max(...times);
 }
 
 export function agentTierRan(states, files, now = Date.now()) {
-  const oldest = oldestStagedAt(files);
+  const newest = newestStagedAt(files);
 
-  if (oldest === null) return { ok: true, reason: 'nothing staged' };
+  if (newest === null) return { ok: true, reason: 'nothing staged' };
 
   const latest = Math.max(...states.map((state) => state.firedAt ?? 0));
 
   if (latest === 0)
     return { ok: false, reason: 'no runtime has ever fired the per-edit hook' };
-  if (latest < oldest)
+  if (latest < newest)
     return {
       ok: false,
       reason: 'the newest staged file is newer than the last hook run',
