@@ -9,17 +9,33 @@ const scratch = 'test/tdd-probe';
 
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
-function probe(body) {
+function probe(name, body) {
   mkdirSync(scratch, { recursive: true });
-  const file = `${scratch}/roman.ts`;
+  const file = `${scratch}/${name}`;
   writeFileSync(file, body);
 
   return file;
 }
 
-const STUB = "export function toRoman(value: number): string {\n  return '';\n}\n";
-const UNUSED_LOCAL =
-  "export function toRoman(value: number): string {\n  const spare = value;\n  return '';\n}\n";
+// The same stub in both languages. A fixture that only covers one extension
+// cannot see that the relaxation is scoped to a rule id the other one never
+// uses -- .ts gets no-unused-vars from typescript-eslint, .mjs from base
+// ESLint, and this repository is almost entirely .mjs.
+const STUBS = [
+  ['stub.ts', "export function toRoman(value: number): string {\n  return '';\n}\n"],
+  ['stub.mjs', "export function toRoman(value) {\n  return '';\n}\n"],
+];
+
+const LOCALS = [
+  [
+    'local.ts',
+    "export function toRoman(value: number): string {\n  const spare = value;\n  return '';\n}\n",
+  ],
+  [
+    'local.mjs',
+    "export function toRoman(value) {\n  const spare = value;\n  return '';\n}\n",
+  ],
+];
 
 function atCommitGate(file) {
   return runSensor('node_modules/eslint/bin/eslint.js', file).status;
@@ -29,18 +45,22 @@ function atCommitGate(file) {
 // body does not use it yet. A per-edit sensor that reports it tells the agent to
 // rename to _value and then rename back -- churn the sensor induced.
 describe('the per-edit tier and the red-green loop', () => {
-  it('lets the hardcode-first stub through', () => {
-    expect(inspect([probe(STUB)]).passed).toBe(true);
+  it.each(STUBS)('lets the hardcode-first stub through as %s', (name, body) => {
+    expect(inspect([probe(name, body)]).passed).toBe(true);
   });
 
-  it('still reports that stub at the commit gate', () => {
-    expect(atCommitGate(probe(STUB))).not.toBe(0);
+  it.each(STUBS)('still reports that stub at the commit gate as %s', (name, body) => {
+    expect(atCommitGate(probe(name, body))).not.toBe(0);
   });
 
-  it('never lets an unused local through, which is not a legal intermediate', () => {
-    const verdict = inspect([probe(UNUSED_LOCAL)]);
+  it.each(LOCALS)('never lets an unused local through as %s', (name, body) => {
+    const verdict = inspect([probe(name, body)]);
 
     expect(verdict.passed).toBe(false);
     expect(verdict.report).toContain('no-unused-vars');
+  });
+
+  it('leaves a config file at the root strict', () => {
+    expect(inspect(['eslint.config.mjs']).passed).toBe(true);
   });
 });

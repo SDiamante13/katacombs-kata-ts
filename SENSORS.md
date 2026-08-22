@@ -421,10 +421,24 @@ through.** That is a different axis from cost and from what a sensor compares ag
 rules can disagree at a boundary, and the trigger is where you settle it rather than by weakening
 either one.
 
-The override lives in `eslint.edit.config.mjs`, which is the whole of `eslint.config.mjs` plus that
-one line. It is a separate file rather than a `--rule` flag because the flag applies to every file
-and fails on the ones the TypeScript plugin does not cover; and it imports the base config, so it
-cannot drift on anything else.
+The override lives in `eslint.edit.config.mjs`, which is the whole of `eslint.config.mjs` plus two
+scoped blocks. It imports the base config, so it cannot drift on anything else.
+
+Two blocks, not one, and the reason is worth knowing before you copy this. `no-unused-vars` is two
+different rules: TypeScript files get it from the `typescript-eslint` plugin, `.mjs` files from base
+ESLint. Relaxing one leaves the other strict — and if your repository is mostly `.mjs`, as this one
+is, relaxing only the TypeScript rule relaxes nothing you actually write.
+
+Widening the first block's glob to cover `.mjs` does not work either:
+
+```text
+A configuration object specifies rule "@typescript-eslint/no-unused-vars",
+but could not find plugin "@typescript-eslint".
+```
+
+That is the same failure as passing `--rule` from the command line, reached by a different route. A
+rule has to be applied in a block whose files its plugin actually covers, which is why the fix is a
+second block using the base rule id rather than a wider glob on the first.
 
 ### Running both tiers without running everything twice
 
