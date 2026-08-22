@@ -216,7 +216,7 @@ The distinction between the first and third is the point. A sensor whose "all cl
 byte-identical whether it examined forty mutants or zero files has told you nothing, and the reader
 cannot tell which happened. So a pass always carries its accounting:
 
-```
+```text sensor-output
 SENSOR behavior: PASS (0 findings)
   3 files · 30 mutants · 30 killed · 0 survived · 0 untried
 ```
@@ -640,15 +640,21 @@ The agent hook and the pre-commit hook overlap: both run the cheap sensors. That
 the point of tier 2 — it is what covers you when your agent has no hooks — but it should be a
 choice. One environment variable decides:
 
-| `SENSORS`      | After every edit | At commit                                     |
-| -------------- | ---------------- | --------------------------------------------- |
-| unset or `all` | fires            | `npm run check` — everything                  |
-| `agent`        | fires            | `npm run check:behavioral` — typecheck, tests |
-| `git`          | silent           | `npm run check` — everything                  |
+| `SENSORS`      | After every edit | At commit                                  |
+| -------------- | ---------------- | ------------------------------------------ |
+| unset or `all` | fires            | `npm run check` — everything               |
+| `agent`        | fires            | `npm run check:behavioral` — the slow ones |
+| `git`          | silent           | `npm run check` — everything               |
 
 `agent` is the setting with no duplicated work: the cheap sensors already ran inside the loop, so
-the commit gate only adds what they were too slow to do. `git` is for an agent with no hooks at
-all. The default is both, because being told twice is cheaper than being told never.
+the commit gate only adds what they were too slow to do — typecheck, the full test suite, the
+documentation sensor and the mutants. `git` is for an agent with no hooks at all. The default is
+both, because being told twice is cheaper than being told never.
+
+The rule that keeps this honest is that **no setting may lose a sensor.** It has been broken once:
+the documentation sensor runs at the commit boundary rather than per edit, and for a while
+`check:behavioral` did not run it, so choosing `agent` silently dropped a whole sensor. Anything
+moved off the per-edit tier has to be added to this one in the same change.
 
 ## Other languages
 

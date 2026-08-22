@@ -101,6 +101,13 @@ describe('what the behavioral tier looks at', () => {
       'src/cave.ts:1:1-1:2',
     ]);
   });
+
+  it.each(['package.json', 'src/cave.tsx', 'tsconfig.json', 'src/a.mjson'])(
+    'does not mistake %s for a mangled source path',
+    (file) => {
+      expect(scopeOf([file], []).malformed).toEqual([]);
+    },
+  );
 });
 
 describe('the sensor against a real mutation run', () => {

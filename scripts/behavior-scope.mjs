@@ -10,7 +10,7 @@ const MUTATED_ROOT = 'src';
 const SOURCE = /\.(ts|mjs|js)$/;
 const TEST = /\.test\.(ts|mjs|js)$/;
 // A source extension with something after it, such as a mutation-range suffix.
-const MALFORMED = /\.(ts|mjs|js)[^/]+$/;
+const MALFORMED = /\.(ts|mjs|js)[^A-Za-z0-9/][^/]*$/;
 
 // Both sides of the comparison must be realpaths or a symlinked ancestor drops the file.
 function realOf(file) {
