@@ -31,17 +31,17 @@ function relativeTo(file) {
   return inside.split(path.sep).join('/');
 }
 
-function inside(files) {
+export function projectPaths(files) {
   return [...new Set(files.map(relativeTo).filter(Boolean))];
 }
 
 export function normalise(files) {
-  return inside(files).filter((file) => SOURCE.test(file));
+  return projectPaths(files).filter((file) => SOURCE.test(file));
 }
 
 // A path the caller meant as source and the sensor cannot read is not a pass.
 export function malformed(files) {
-  return inside(files).filter((file) => !SOURCE.test(file) && MALFORMED.test(file));
+  return projectPaths(files).filter((file) => !SOURCE.test(file) && MALFORMED.test(file));
 }
 
 export function isMutated(file) {

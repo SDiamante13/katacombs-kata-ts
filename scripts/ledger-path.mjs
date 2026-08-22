@@ -13,8 +13,12 @@ function safely(session) {
 }
 
 // A session id arrives in a hook payload and ends up naming a file.
-export function ledgerFile(session, suffix) {
+export function safeSessionName(session) {
   const named = typeof session === 'string' && session.length > 0;
 
-  return path.join(ledgerRoot, `${named ? safely(session) : 'unidentified'}${suffix}`);
+  return named ? safely(session) : 'unidentified';
+}
+
+export function ledgerFile(session, suffix) {
+  return path.join(ledgerRoot, `${safeSessionName(session)}${suffix}`);
 }

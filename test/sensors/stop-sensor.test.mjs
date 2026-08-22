@@ -1,11 +1,11 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { rmSync } from 'node:fs';
 import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { ledgerPath, record } from '../../scripts/session-ledger.mjs';
 import { stopResponse } from '../../scripts/stop-response.mjs';
 import { fireHook } from './sensor-harness.mjs';
+import { turnProbe } from './turn-fixture.mjs';
 
 const session = 'behavior-stop-probe';
 const source = 'src/stop-probe.ts';
@@ -25,22 +25,15 @@ it('answers something', () => {
 });
 `;
 
+const probe = turnProbe({ session, source, spec });
+
 function markerPath() {
   return path.resolve('reports/ledger', `${session}.behavior.json`);
 }
 
 function forget() {
-  rmSync(ledgerPath(session), { force: true });
+  probe.uproot();
   rmSync(markerPath(), { force: true });
-  rmSync(path.resolve(source), { force: true });
-  rmSync(path.resolve(spec), { force: true });
-}
-
-function plantWeakWork() {
-  mkdirSync(path.dirname(path.resolve(source)), { recursive: true });
-  writeFileSync(path.resolve(source), CAVE);
-  writeFileSync(path.resolve(spec), WEAK);
-  record(session, [source]);
 }
 
 const failing = {
@@ -95,35 +88,25 @@ describe('the Stop hook against a real turn', () => {
   afterEach(forget);
 
   it('blocks the agent when the turn left a mutant alive', () => {
-    plantWeakWork();
+    probe.plant(CAVE, WEAK);
 
-    const { out } = fireHook('scripts/stop-sensor.mjs', {
-      session_id: session,
-      stop_hook_active: false,
-    });
-    const answer = JSON.parse(out);
+    const answer = probe.stop();
 
     expect(answer.decision).toBe('block');
     expect(answer.reason).toContain('mutant-survived');
   }, 120_000);
 
   it('holds the expensive tier back while the cheap one still has findings', () => {
-    writeFileSync(path.resolve(source), `${CAVE}\nconst unused = 1;\n`);
-    writeFileSync(path.resolve(spec), WEAK);
-    record(session, [source]);
+    probe.plant(`${CAVE}\nconst unused = 1;\n`, WEAK);
 
-    const { out } = fireHook('scripts/stop-sensor.mjs', {
-      session_id: session,
-      stop_hook_active: false,
-    });
-    const answer = JSON.parse(out);
+    const answer = probe.stop();
 
     expect(answer.reason).toContain('cheap-tier-first');
     expect(answer.reason).not.toContain('mutant-survived');
   }, 120_000);
 
   it('says nothing at all when the git tier owns the sensors', () => {
-    plantWeakWork();
+    probe.plant(CAVE, WEAK);
 
     const { out, status } = fireHook(
       'scripts/stop-sensor.mjs',

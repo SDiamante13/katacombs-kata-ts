@@ -13,7 +13,7 @@ export function coach({ name, text, kernel }, coached) {
   return `\n${indent(`${name.toUpperCase()}\n${text}`)}`;
 }
 
-function pluralize(count, noun) {
+export function pluralize(count, noun) {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
 }
 
