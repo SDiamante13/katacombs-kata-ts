@@ -1,3 +1,4 @@
+import { behavioral } from './guides/behavioral.mjs';
 import { comments } from './guides/comments.mjs';
 import { design } from './guides/design.mjs';
 import { docs } from './guides/docs.mjs';
@@ -9,6 +10,7 @@ import { types } from './guides/types.mjs';
 export const guides = Object.fromEntries(
   Object.entries({
     ...structural,
+    ...behavioral,
     ...comments,
     ...design,
     ...docs,
@@ -26,6 +28,9 @@ export const kernels = {
   'mocking-library': 'hand-roll a Fake',
   'leaked-secret': 'rotate it first, then remove it',
   'stale-doc': 'fix the doc or build the thing',
+  'broken-behavior': 'green before you measure anything',
+  'mutant-survived': 'assert the value, not the absence of a crash',
+  'mutant-uncovered': 'no test reaches this line',
   'commented-out-code': 'delete it, git remembers',
   'long-comment': 'name it in code, or link the doc',
   'stale-comment': 'the code moved, the comment did not',

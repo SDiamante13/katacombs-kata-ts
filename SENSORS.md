@@ -26,7 +26,7 @@ How each sensor is wired, and which files to copy into your own project.
 | `scripts/worktree-watch.mjs`          | trigger             | catches a file a shell command wrote, which names no path | live    |
 | `scripts/worktree-baseline.mjs`       | trigger             | SessionStart; the one hook both runtimes share unchanged  | live    |
 | `.claude/settings.json`               | trigger             | SessionStart and PostToolUse wiring for Claude Code       | live    |
-| `.claude/hooks/`                      | trigger             | the Claude Code adapter; Stop and PreToolUse pending      | live    |
+| `.claude/hooks/`                      | trigger             | the Claude Code adapter; PreToolUse pending               | live    |
 | `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                             | live    |
 | `.codex/hooks/`                       | trigger             | the Codex adapter                                         | live    |
 | `.claude/skills/design-sensor/`       | design              | the inferential reviewer and its charter                  | pending |
@@ -171,6 +171,65 @@ This repo has both. The rule:
 directory that only exists on the author's laptop — useful, and meaningless to you. The
 documentation sensor is committed, because every repository has a README and every README rots.
 A sensor you cannot copy is not a sensor you can adopt.
+
+## The behavioral sensor
+
+```sh
+npm run behavior:sensor   # the tests, then the mutants they miss — coached
+npm run behavior:report   # opens the last run's HTML report
+```
+
+Coverage is the gameable metric. A suite can execute every line in a file, assert almost nothing,
+and report 100%. Mutation testing asks the only question that matters about a test: **if the code
+were wrong, would this test say so?** Stryker changes the code on purpose — flips a comparison,
+empties a string, inverts a condition — and reruns the tests. A mutant that dies is a test doing its
+job. A mutant that survives is a line your tests execute and do not care about.
+
+The sensor runs in two stages, and the order is the point:
+
+1. **vitest, on the tests related to what changed.** If they are red, it stops there and says so. A
+   mutation score over a failing suite is noise, and mutating a red suite wastes the seconds this
+   tier is budgeted.
+2. **Stryker, scoped with `--mutate` to the changed source files.** About five seconds from cold on
+   a small change, which is what makes end-of-turn a viable trigger.
+
+Findings come back in the same shape as every other sensor, with two rules:
+
+| Rule               | Fires when                                                          |
+| ------------------ | ------------------------------------------------------------------- |
+| `mutant-survived`  | a test executes the line, the behaviour changed, and nothing failed |
+| `mutant-uncovered` | no test reaches the line at all — a coverage gap in front of that   |
+
+`mutant-uncovered` findings are collapsed to one per line, because twelve untried mutants on one
+line are one piece of news. Eight findings print in full; the rest are counted, and the HTML report
+has all of them.
+
+### Why it fires when the agent stops
+
+Structural sensors compare a file against a threshold, and a file half-way through an edit is still
+a file. Mutation testing compares tests against code, and mid-edit those two are legitimately out of
+step — the red half of red-green is a state the method requires you to pass through. Firing this
+tier per edit would report a finding on every first step of TDD. End of turn is the first moment the
+two are meant to agree.
+
+`scripts/stop-sensor.mjs` is the whole hook, and **both runtimes point at the same file** — the
+second one they share unchanged, after `worktree-baseline.mjs`. Where `PostToolUse` forced two
+adapters, `Stop` needs none: neither runtime hands the hook anything it needs.
+
+### Not blocking forever
+
+A Stop hook that blocks whenever it has something to say is a loop. Three guards, in order:
+
+- `stop_hook_active`, when the runtime sets it. Claude Code does; do not rely on it alone.
+- **A fingerprint of the findings.** The same set of findings buys one push-back, not one per turn.
+  Fix some and break others and the fingerprint changes, which is new information and earns another.
+- **A cap of three** push-backs per session, whatever the agent does in between.
+
+Past those, the sensor still reports — it just stops standing in the doorway. `systemMessage`
+carries the findings without blocking.
+
+For what this tier is pointed at and what it deliberately leaves alone, see
+[`context/mutation-scope.md`](context/mutation-scope.md).
 
 ## The design sensor, computationally
 

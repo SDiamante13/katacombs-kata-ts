@@ -23,6 +23,18 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/scripts/stop-sensor.mjs\"",
+            "timeout": 120,
+            "statusMessage": "Running the tests, then mutating what changed"
+          }
+        ]
+      }
     ]
   }
 }
