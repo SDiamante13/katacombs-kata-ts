@@ -4,13 +4,11 @@ if [ -n "$files" ]; then
   echo "$files" | xargs git add
 fi
 
-# Tier 2 of the trigger ladder. SENSORS=agent means the cheap sensors already
-# fired inside the agent loop, so the commit gate only adds what they skipped.
+# Tier 2. SENSORS=agent means the loop already ran the cheap sensors.
 if node scripts/git-tier.mjs; then
   npm run check
 else
-  # A hook that never fired looks exactly like a hook with nothing to say, so
-  # SENSORS=agent has to prove the agent tier actually ran before we trust it.
+  # ...so make it prove the agent tier actually ran.
   node scripts/sensors-doctor.mjs --assert || exit 1
   echo "SENSORS=agent — cheap sensors already ran per edit; checking behavior only."
   npm run check:behavioral

@@ -20,10 +20,7 @@ describe('the per-edit sensor run', () => {
     );
   });
 
-  // OUT_OF_SCOPE anchored on a trailing slash, so it excluded the directory
-  // node_modules/ but not a file or symlink *named* node_modules. Symlinking
-  // node_modules into a worktree put a bare entry in git status and it reached
-  // the sensors.
+  // A symlink named node_modules once reached the sensors.
   it('ignores a file that shares a name with an excluded directory', () => {
     writeFileSync('capture', 'not a directory\n');
 
@@ -74,11 +71,7 @@ describe('the per-edit sensor run', () => {
     expect(verdict.report).toContain('jscpd PASS');
   });
 
-  // The docs sensor checks a doc against package.json and against files on
-  // disk, so editing either of those breaks it without touching the doc. A
-  // per-edit trigger fires on the one case it should stay quiet for -- a doc
-  // written ahead of the code -- and misses every case that matters. It runs
-  // at the completion boundary instead.
+  // A doc breaks when package.json changes, which is not an edit to the doc.
   it('leaves documentation to the completion boundary', () => {
     const doc = scratch.file('stale.md', '```sh\nnpm run nothing:here\n```\n');
     const verdict = inspect([doc]);

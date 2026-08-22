@@ -37,9 +37,7 @@ function fixture(name, contents) {
   return directory;
 }
 
-// Before the per-edit hook, two sensors never ran at once. Now an edit can land
-// while `npm run check` is running, and both wrote to one report path — so each
-// read the other's answer and a leaky directory came back green.
+// Two sensors sharing one report path read each other's answers.
 describe('two sensor runs overlapping', () => {
   it('never lets one run answer for another', async () => {
     const leaky = fixture('leak', `export const t = "${TOKEN}";\n`);

@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-// SessionStart, for both runtimes — it needs no translation, because a session
-// id is the one thing they agree on. Records what the worktree already looked
-// like, so the first edit is measured against it rather than reported wholesale.
+// SessionStart for both runtimes: the worktree as it was before the session.
 import { readHookPayload } from './hook-io.mjs';
 import { baseline } from './worktree-watch.mjs';
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// PostToolUse sensor for Codex. Codex only matches shell commands, so the
-// adapter cannot be told which file changed — it watches the worktree instead.
+// PostToolUse for Codex: it matches shell commands only, so watch the worktree.
 import { inspect } from '../../scripts/edit-sensors.mjs';
 import { readHookPayload } from '../../scripts/hook-io.mjs';
 import { stamp } from '../../scripts/sensor-liveness.mjs';

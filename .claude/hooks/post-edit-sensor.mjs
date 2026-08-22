@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-// PostToolUse sensor for Claude Code. The edit tools name the file they wrote,
-// but a shell command can write one too, so the worktree is watched either way.
+// PostToolUse for Claude Code: the payload names the file, the worktree catches the rest.
 import { inspect } from '../../scripts/edit-sensors.mjs';
 import { editedPaths, readHookPayload } from '../../scripts/hook-io.mjs';
 import { stamp } from '../../scripts/sensor-liveness.mjs';

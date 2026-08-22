@@ -17,10 +17,7 @@ function probe(name, body) {
   return file;
 }
 
-// The same stub in both languages. A fixture that only covers one extension
-// cannot see that the relaxation is scoped to a rule id the other one never
-// uses -- .ts gets no-unused-vars from typescript-eslint, .mjs from base
-// ESLint, and this repository is almost entirely .mjs.
+// Both languages: the relaxation is per rule id, and each extension uses a different one.
 const STUBS = [
   ['stub.ts', "export function toRoman(value: number): string {\n  return '';\n}\n"],
   ['stub.mjs', "export function toRoman(value) {\n  return '';\n}\n"],
@@ -41,9 +38,7 @@ function atCommitGate(file) {
   return runSensor('node_modules/eslint/bin/eslint.js', file).status;
 }
 
-// Red-green requires passing through a state where the signature exists and the
-// body does not use it yet. A per-edit sensor that reports it tells the agent to
-// rename to _value and then rename back -- churn the sensor induced.
+// Red-green passes through a signature whose body does not use it yet.
 describe('the per-edit tier and the red-green loop', () => {
   it.each(STUBS)('lets the hardcode-first stub through as %s', (name, body) => {
     expect(inspect([probe(name, body)]).passed).toBe(true);

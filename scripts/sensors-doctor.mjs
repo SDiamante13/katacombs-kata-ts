@@ -133,8 +133,7 @@ function assertOn(states) {
   process.exitCode = 1;
 }
 
-// Importing this module must not run it. The tests import agentTierRan, and a
-// module that reports on import is a module that reports from inside a test.
+// Importing this module must not run it.
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const states = runtimes.map(examine);
 
