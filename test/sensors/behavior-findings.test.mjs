@@ -140,3 +140,35 @@ describe('what it keeps when several tests fail at once', () => {
     expect(brokenBehavior(output).detail).toContain('Tests  2 failed');
   });
 });
+
+describe('what survives truncation when one file is very noisy', () => {
+  const noisy = {
+    files: {
+      'src/cave.ts': {
+        mutants: [
+          ...Array.from({ length: 12 }, (_, index) => mutantFor('Survived', index + 1)),
+          mutantFor('NoCoverage', 40),
+          mutantFor('NoCoverage', 41),
+          mutantFor('NoCoverage', 42),
+        ],
+      },
+    },
+  };
+
+  const written = behaviorReport(behaviorFindings(noisy));
+
+  it('still shows an untested line, not only survivors', () => {
+    expect(written).toContain('mutant-uncovered');
+  });
+
+  it('still leads with the survivors', () => {
+    expect(written.indexOf('mutant-survived')).toBeLessThan(
+      written.indexOf('mutant-uncovered'),
+    );
+  });
+
+  it('counts everything it did not print', () => {
+    expect(written).toContain('SENSOR behavior: FAIL (15 findings)');
+    expect(written).toContain('… and 7 more');
+  });
+});

@@ -36,25 +36,30 @@ export function skipped(startedAt, note = null) {
   };
 }
 
-export function passing(report, note = null) {
-  const said = report ? accounting(report) : `  ${note}\n`;
+function noted(note) {
+  return note ? `  ${note}\n` : '';
+}
+
+export function passing(report, note = null, aside = null) {
+  const said = report ? accounting(report) : noted(note);
 
   return {
     outcome: 'pass',
     passed: true,
     findings: [],
-    report: sensorReport('behavior', []) + said,
+    report: sensorReport('behavior', []) + said + noted(aside),
   };
 }
 
-export function failing(findings, report = null, startedAt = null) {
+export function failing(findings, report = null, startedAt = null, aside = null) {
   if (report === null) markReportStale(startedAt);
 
   return {
     outcome: 'fail',
     passed: false,
     findings,
-    report: behaviorReport(findings) + accounting(report) + trailer(findings),
+    report:
+      behaviorReport(findings) + accounting(report) + noted(aside) + trailer(findings),
   };
 }
 

@@ -242,8 +242,13 @@ report green.**
 
 `mutant-uncovered` findings are collapsed to one per line, because twelve untried mutants on one
 line are one piece of news. Eight findings print in full; the rest are counted, and the HTML report
-has all of them. When several tests fail at once, `broken-behavior` keeps each failure's name and
-assertion — a flat tail of the output drops the first one, which is usually the one that matters.
+has all of them. When several tests fail at once, `broken-behavior` keeps each failure's name and assertion — a flat
+tail of the output drops the first one, which is usually the one that matters. It prints the first
+four and counts the rest; past that, `npm test` is the place to look.
+
+Truncation reserves room: survivors sort ahead of untested lines, so without a reservation one noisy
+file would push every `mutant-uncovered` finding out of the printed eight. An untested line is
+usually the more urgent of the two.
 
 ### What it costs
 

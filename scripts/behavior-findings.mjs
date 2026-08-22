@@ -2,6 +2,7 @@ import { guides, kernels } from './sensor-guides.mjs';
 import { coach, indent, sensorReport } from './sensor-report.mjs';
 
 const MOST = 8;
+const RESERVED = 2;
 
 const DETECTED = new Set(['Killed', 'Timeout']);
 const NOT_EVALUATED = new Set(['CompileError', 'RuntimeError', 'Pending']);
@@ -121,9 +122,18 @@ export function unavailableReport(findings) {
   return `SENSOR behavior: UNAVAILABLE\n\n${findings.map((finding) => format(finding, coached)).join('\n')}\n`;
 }
 
+// Survivors sort first, so a reservation keeps untested lines from being crowded out.
+function pick(findings) {
+  const uncovered = findings.filter((finding) => finding.rule === 'mutant-uncovered');
+  const rest = findings.filter((finding) => finding.rule !== 'mutant-uncovered');
+  const head = rest.slice(0, MOST - Math.min(uncovered.length, RESERVED));
+
+  return [...head, ...uncovered.slice(0, MOST - head.length)];
+}
+
 export function behaviorReport(findings) {
   const coached = new Set();
-  const shown = findings.slice(0, MOST).map((finding) => format(finding, coached));
+  const shown = pick(findings).map((finding) => format(finding, coached));
 
   return sensorReport('behavior', [...shown, ...overflow(findings)], findings.length);
 }

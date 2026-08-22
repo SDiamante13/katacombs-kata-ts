@@ -88,24 +88,28 @@ function refusals(scope, startedAt) {
 }
 
 function beforeMutation(scope, startedAt) {
+  const aside = unknownNote(scope);
   const types = typeErrors();
 
-  if (types !== null) return failing([brokenTypes(types)], null, startedAt);
+  if (types !== null) return failing([brokenTypes(types)], null, startedAt, aside);
 
   const tests = runTests(scope);
 
-  if (tests.failed !== null)
-    return failing([brokenBehavior(tests.failed)], null, startedAt);
+  if (tests.failed !== null) {
+    return failing([brokenBehavior(tests.failed)], null, startedAt, aside);
+  }
   // Stryker cannot mutate what no test imports; it errors instead of reporting.
   if (tests.ranNothing && scope.mutated.length > 0) {
-    return failing(scope.mutated.map(untestedSource), null, startedAt);
+    return failing(scope.mutated.map(untestedSource), null, startedAt, aside);
   }
 
   return null;
 }
 
-function afterMutation(outcome, startedAt) {
-  if (outcome.tooSlow) return failing([tookTooLong(outcome.tooSlow)], null, startedAt);
+function afterMutation(outcome, startedAt, aside) {
+  if (outcome.tooSlow) {
+    return failing([tookTooLong(outcome.tooSlow)], null, startedAt, aside);
+  }
   if (outcome.crashed) {
     return unavailable([mutationUnavailable(outcome.crashed)], startedAt);
   }
@@ -113,8 +117,8 @@ function afterMutation(outcome, startedAt) {
   const findings = behaviorFindings(outcome.report);
 
   return findings.length === 0
-    ? passing(outcome.report)
-    : failing(findings, outcome.report);
+    ? passing(outcome.report, null, aside)
+    : failing(findings, outcome.report, startedAt, aside);
 }
 
 export function examine(changed) {
@@ -127,9 +131,11 @@ export function examine(changed) {
   const stopped = beforeMutation(scope, startedAt);
 
   if (stopped !== null) return stopped;
-  if (scope.mutated.length === 0) return passing(null, nothingMutated(scope));
+  if (scope.mutated.length === 0) {
+    return passing(null, nothingMutated(scope), unknownNote(scope));
+  }
 
-  return afterMutation(runMutation(scope.mutated), startedAt);
+  return afterMutation(runMutation(scope.mutated), startedAt, unknownNote(scope));
 }
 
 // The ledger is append-only, so it outlives the change — context/mutation-scope.md.
