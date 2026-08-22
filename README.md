@@ -49,11 +49,11 @@ Detection is the easy part. Most setups stop there.
 
 ## The three sensors
 
-| Sensor         | Detects                                                                                          | Cost             | Fires                          |
-| -------------- | ------------------------------------------------------------------------------------------------ | ---------------- | ------------------------------ |
-| **Structural** | long functions, deep nesting, too many parameters, duplication, unsafe types                     | milliseconds     | after every file edit          |
-| **Behavioral** | broken behavior, then **weak assertions** via mutation testing                                   | seconds          | when the agent finishes a turn |
-| **Design**     | misplaced responsibilities, semantic duplication, names that lie, tests that read as transcripts | dollars and ~30s | once per session, gated        |
+| Sensor         | Detects                                                                                          | Cost           | Fires                          |
+| -------------- | ------------------------------------------------------------------------------------------------ | -------------- | ------------------------------ |
+| **Structural** | long functions, deep nesting, too many parameters, duplication, unsafe types                     | milliseconds   | after every file edit          |
+| **Behavioral** | broken behavior, then **weak assertions** via mutation testing                                   | seconds        | when the agent finishes a turn |
+| **Design**     | misplaced responsibilities, semantic duplication, names that lie, tests that read as transcripts | one model turn | once per session, gated        |
 
 Trigger frequency matches sensor cost. Cheap sensors run constantly; expensive ones are gated behind
 the cheap ones being green.
@@ -96,9 +96,18 @@ npm test          # the tests on their own
 npm run behavior:report   # the last mutation run, in a browser, labelled with what it covers
 ```
 
-`npm run check` runs every sensor. One of them, `gitleaks`, is a binary rather than a package —
-`brew install gitleaks`, or grab a release. If it is missing the check fails rather than skipping:
-a scanner that cannot run must never report green.
+`npm run check` runs every sensor a program can run. One of them, `gitleaks`, is a binary rather
+than a package — `brew install gitleaks`, or grab a release. If it is missing the check fails rather
+than skipping: a scanner that cannot run must never report green.
+
+The inferential design sensor is the one it cannot run. That tier is a judgment, so it fires once
+per session from the Stop hook and is recorded by hand:
+
+```sh
+npm run design:scope      # what changed this session, and what to read
+npm run design:review -- reports/design-findings.json
+npm run design:report     # the last review, whole
+```
 
 ## Architecture
 

@@ -4,6 +4,8 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { behaviorFindings } from '../../scripts/behavior-findings.mjs';
+import { charter } from '../../scripts/design-charter.mjs';
+import { GUARDS } from '../../scripts/design-gate.mjs';
 import { sensorRules } from '../../scripts/eslint-rules/index.mjs';
 import { tests as testGuides } from '../../scripts/guides/tests.mjs';
 
@@ -72,7 +74,7 @@ const WRITTEN = {
 function claimed(pattern) {
   const found = pattern.exec(readFileSync(path.resolve('SENSORS.md'), 'utf8'));
 
-  return found ? WRITTEN[found[1]] : null;
+  return found ? WRITTEN[found[1].toLowerCase()] : null;
 }
 
 // A count written out in prose is the claim that goes stale in silence.
@@ -91,5 +93,13 @@ describe('the counts SENSORS.md states about itself', () => {
 
   it('gets the named-arrange threshold right', () => {
     expect(claimed(/more than (\w+) statements before the test asserts/)).toBe(8);
+  });
+
+  it('gets the number of questions the design charter may ask right', () => {
+    expect(claimed(/(\w+) questions, and a closed list/)).toBe(charter.length);
+  });
+
+  it('gets the number of guard clauses on the design gate right', () => {
+    expect(claimed(/the answer is\s+(\w+) clauses/)).toBe(GUARDS);
   });
 });

@@ -31,7 +31,12 @@ How each sensor is wired, and which files to copy into your own project.
 | `.claude/hooks/`                      | trigger             | the Claude Code adapter; PreToolUse pending                | live    |
 | `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                              | live    |
 | `.codex/hooks/`                       | trigger             | the Codex adapter                                          | live    |
-| `.claude/skills/design-sensor/`       | design              | the inferential reviewer and its charter                   | pending |
+| `context/design-charter.md`           | design              | the twelve questions the inferential reviewer may ask      | live    |
+| `scripts/design-charter.mjs`          | design              | the same twelve, where the recorder can enforce them       | live    |
+| `scripts/design-gate.mjs`             | design              | the guards that decide whether the review is worth buying  | live    |
+| `scripts/design-review.mjs`           | design              | records a review, or refuses it and asks again             | live    |
+| `.claude/skills/design-sensor/`       | design              | the inferential reviewer, for Claude Code                  | live    |
+| `.codex/skills/design-sensor/`        | design              | the same file, for Codex CLI — no adapter needed           | live    |
 | `AGENTS.md`                           | contract            | what the agent is told, including sensor integrity         | pending |
 
 ## The structural sensor
@@ -432,14 +437,85 @@ Note what this buys that the structural sensor cannot: no threshold can see that
 for the file system. **Structural sensors buy clean shape; only boundary sensors buy clean
 boundaries.**
 
+## The design sensor, inferentially
+
+Every other sensor here is a program. This one is a language model reading the change, which makes
+it the only sensor that can **invent** its findings, and the only one that costs money. Both facts
+shape it: the questions it may ask are closed, and it fires at most once a session, behind a gate.
+
+### The gate is the interesting part
+
+The sensor is a skill. The engineering is in deciding when it is worth buying, and the answer is
+five clauses, in order — each one a reason the review would tell you nothing:
+
+| Clause                              | Why it is not worth buying                                      |
+| ----------------------------------- | --------------------------------------------------------------- |
+| the hook is answering its own block | never recurse; a Stop hook that re-triggers itself never ends   |
+| a review is already on file         | one per session, so the cost is capped by construction          |
+| no source changed this session      | skips the Q&A turn, the docs-only turn, the turn that read code |
+| a cheaper sensor still has findings | its answer would be about code that is about to change again    |
+| it has asked twice and been ignored | nothing here can make a judgment happen; the gate can only ask  |
+
+Anything that survives all five blocks the turn with `SENSOR design: DUE`, the changed files, and
+the behavioral accounting that got it this far. **v1 does not spawn a subagent from the hook** — it
+blocks and makes the agent invoke the skill itself. All of the auto-trigger, none of the
+orchestration; the sidecar upgrade stays open because the gate lives in the hook, not in the sensor.
+
+The fourth clause is the escalation ladder again, one rung higher. Cheap sensors gate the tests,
+the tests gate the mutants, and the mutants gate the only sensor that costs dollars.
+
+### Twelve questions, and a closed list
+
+`context/design-charter.md` has them in full, in six groups: **placement**, **abstraction**,
+**naming**, **test design**, **comments**, **documentation**. Two of those groups are the reason
+the tier exists at all — a token matcher cannot see two functions solving one problem in different
+words, and a missing abstraction shows up as a diff that is wide rather than a file that is long.
+
+Correctness, style, security, performance and anything a lint rule already decides are out of
+scope. A finding about them is noise **even when it is right**, because it teaches the agent that
+the cheap sensors are optional.
+
+The same twelve live in `scripts/design-charter.mjs`, because the recorder needs the ids. Two
+copies of anything drift, so a test reads the prose and asserts every question appears in the code
+word for word.
+
+### A review that is not recorded did not happen
+
+```sh
+npm run design:scope                              # what changed, and what to read
+npm run design:review -- reports/design-findings.json
+npm run design:report                             # the last review, whole
+```
+
+The recorder is what makes the gate honest. It refuses a review that skipped a file the session
+changed, a finding citing a question that does not exist, a finding pointing at a path that does
+not exist, a finding that says what is wrong without saying what to do instead, and any pile of
+more than five findings. A refused review records nothing, so the gate asks again.
+
+`{"files": [...], "findings": []}` is a real answer and the normal one. A design sensor that always
+finds something is the slop the charter exists to prevent.
+
+### The hole this cannot close
+
+The recorder checks the **shape** of a review, never its truth. An agent can hand it every changed
+file and an empty findings list without having read a line, and the receipt is written. Nothing at
+this level closes that: the reviewer is the only party that knows whether it looked.
+
+What the design does buy is that faking it takes a deliberate false statement rather than silence —
+the same move the suppression sensor makes one tier down. The honest limit is worth stating out
+loud, because a sensor whose limits are undocumented gets trusted past them.
+
+`SENSORS=git` loses this tier outright. The commit gate repeats the behavioral tier; nothing
+repeats a judgment. The Stop hook says so on the way out rather than exiting quietly.
+
 ## The three tiers
 
-| Sensor                 | Detects                                                          | Cost             | Fires                   |
-| ---------------------- | ---------------------------------------------------------------- | ---------------- | ----------------------- |
-| Structural             | length, depth, parameters, complexity, duplication, unsafe types | milliseconds     | after every file edit   |
-| Design (computational) | layer violations, impurity, mocking libraries                    | milliseconds     | after every file edit   |
-| Behavioral             | broken behavior, then weak assertions                            | seconds          | end of turn             |
-| Design (inferential)   | cohesion, naming, semantic duplication, missing abstraction      | dollars and ~30s | once per session, gated |
+| Sensor                 | Detects                                                          | Cost           | Fires                   |
+| ---------------------- | ---------------------------------------------------------------- | -------------- | ----------------------- |
+| Structural             | length, depth, parameters, complexity, duplication, unsafe types | milliseconds   | after every file edit   |
+| Design (computational) | layer violations, impurity, mocking libraries                    | milliseconds   | after every file edit   |
+| Behavioral             | broken behavior, then weak assertions                            | seconds        | end of turn             |
+| Design (inferential)   | cohesion, naming, semantic duplication, missing abstraction      | one model turn | once per session, gated |
 
 Trigger frequency matches sensor cost. The expensive sensors are gated behind the cheap ones
 being green.

@@ -130,4 +130,16 @@ describe('the hook when the sensors are switched off', () => {
     expect(status).toBe(0);
     expect(err).toContain('SENSORS=git');
   });
+
+  // The commit gate repeats the behavioral tier. Nothing repeats the design tier.
+  it('names the tier that this setting loses outright', () => {
+    const { err } = fireHook(
+      'scripts/stop-sensor.mjs',
+      { session_id: session },
+      { SENSORS: 'git' },
+    );
+
+    expect(err).toContain('no design review');
+    expect(err).toContain('nothing repeats the design tier');
+  });
 });
