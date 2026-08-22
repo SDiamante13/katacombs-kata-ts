@@ -1,3 +1,5 @@
+import { rmSync, writeFileSync } from 'node:fs';
+
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { inspect, scopedFiles } from '../../scripts/edit-sensors.mjs';
@@ -16,6 +18,20 @@ describe('the per-edit sensor run', () => {
     expect(scopedFiles(['reports/ledger/x.txt', 'node_modules/eslint/index.js'])).toEqual(
       [],
     );
+  });
+
+  // OUT_OF_SCOPE anchored on a trailing slash, so it excluded the directory
+  // node_modules/ but not a file or symlink *named* node_modules. Symlinking
+  // node_modules into a worktree put a bare entry in git status and it reached
+  // the sensors.
+  it('ignores a file that shares a name with an excluded directory', () => {
+    writeFileSync('capture', 'not a directory\n');
+
+    try {
+      expect(scopedFiles(['capture'])).toEqual([]);
+    } finally {
+      rmSync('capture', { force: true });
+    }
   });
 
   it('reports nothing at all when the edit touched no project file', () => {

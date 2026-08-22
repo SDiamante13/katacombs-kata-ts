@@ -15,7 +15,7 @@ const prettierBin = path.join(
 const LINTABLE = /\.(js|mjs|ts)$/;
 const CLONE_SCANNED = /^(src|test|scripts)\//;
 const OUT_OF_SCOPE =
-  /^(node_modules|reports|dist|build|coverage|\.stryker-tmp|docs|capture)\//;
+  /^(node_modules|reports|dist|build|coverage|\.stryker-tmp|docs|capture)(\/|$)/;
 
 function node(args) {
   const result = spawnSync(process.execPath, args, {
