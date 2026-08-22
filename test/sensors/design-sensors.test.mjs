@@ -10,7 +10,7 @@ const domain = path.resolve('src/domain');
 const fixture = path.join(domain, '__sensor-fixture__.ts');
 const eslint = new ESLint();
 
-afterAll(() => rmSync(path.resolve('src'), { recursive: true, force: true }));
+afterAll(() => rmSync(fixture, { force: true }));
 
 async function rulesFiredOn(code) {
   mkdirSync(domain, { recursive: true });

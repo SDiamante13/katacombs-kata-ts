@@ -17,4 +17,9 @@ const pushBack =
   !payload.stop_hook_active &&
   shouldPushBack(payload.session_id, verdict.findings);
 
-process.stdout.write(JSON.stringify(stopResponse(verdict, pushBack)));
+const answer = stopResponse(verdict, pushBack);
+
+// systemMessage is not guaranteed to render; stderr is the runtime-agnostic copy.
+if (answer.systemMessage) process.stderr.write(`${verdict.report}\n`);
+
+process.stdout.write(JSON.stringify(answer));

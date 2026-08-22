@@ -1,145 +1,86 @@
-import { spawnSync } from 'node:child_process';
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
   behaviorFindings,
-  behaviorReport,
   brokenBehavior,
+  brokenTypes,
+  mutationUnavailable,
 } from './behavior-findings.mjs';
-import { mutationScope, present, testScope } from './behavior-scope.mjs';
+import { scopeOf } from './behavior-scope.mjs';
+import { failing, passing, skipped, unavailable } from './behavior-verdict.mjs';
+import { dirtyPaths } from './git-changes.mjs';
+import { runMutation } from './mutation-run.mjs';
 import { node } from './node-runner.mjs';
 import { changedThisSession } from './session-ledger.mjs';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const vitestBin = path.join(projectRoot, 'node_modules', 'vitest', 'vitest.mjs');
-const strykerBin = path.join(
-  projectRoot,
-  'node_modules',
-  '@stryker-mutator',
-  'core',
-  'bin',
-  'stryker.js',
-);
+const tscBin = path.join(projectRoot, 'node_modules', 'typescript', 'bin', 'tsc');
 
-const mutationRoot = path.join(projectRoot, 'reports', 'mutation');
-const runRoot = path.join(mutationRoot, String(process.pid));
+export { viewablePath } from './mutation-run.mjs';
 
-export const viewablePath = path.join(mutationRoot, 'mutation.html');
-
-function runTests(files) {
-  const { output, status } = node(
-    [vitestBin, 'related', ...files, '--run', '--passWithNoTests'],
-    { NO_COLOR: '1', FORCE_COLOR: '0' },
-  );
+function typeErrors() {
+  const { output, status } = node([tscBin, '--noEmit']);
 
   return status === 0 ? null : output;
 }
 
-// A fixed report path is how two concurrent sensors read each other's answer.
-function runConfig(files) {
-  const overrides = {
-    mutate: files,
-    tempDirName: path.join('.stryker-tmp', String(process.pid)),
-    jsonReporter: { fileName: `reports/mutation/${process.pid}/mutation.json` },
-    htmlReporter: { fileName: `reports/mutation/${process.pid}/mutation.html` },
-  };
-
-  return `import base from '../../../stryker.config.mjs';\n\nexport default { ...base, ...${JSON.stringify(overrides)} };\n`;
-}
-
-function writeRunConfig(files) {
-  const file = path.join(runRoot, 'stryker.run.mjs');
-
-  mkdirSync(runRoot, { recursive: true });
-  writeFileSync(file, runConfig(files));
-
-  return file;
-}
-
-function publishReport() {
-  const produced = path.join(runRoot, 'mutation.html');
-
-  if (existsSync(produced)) renameSync(produced, viewablePath);
-  rmSync(runRoot, { recursive: true, force: true });
-}
-
-function runMutation(files) {
-  const { output } = node([strykerBin, 'run', writeRunConfig(files)]);
-  const produced = path.join(runRoot, 'mutation.json');
-
-  if (!existsSync(produced)) {
-    rmSync(runRoot, { recursive: true, force: true });
-
-    return { crashed: output };
+function testArguments(scope) {
+  // A deleted source file cannot be named to `related`, so widen to the suite.
+  if (scope.gone.length > 0) {
+    return [vitestBin, '--run', '--config', 'vitest.mutation.config.ts'];
   }
 
-  const report = JSON.parse(readFileSync(produced, 'utf8'));
-  publishReport();
-
-  return { report };
+  return [vitestBin, 'related', ...scope.tests, '--run'];
 }
 
-function sensorCrashed(output) {
-  return {
-    rule: 'sensor-contract',
-    where: 'stryker',
-    detail: `The mutation sensor could not run, so it has nothing to say about these tests.\n\n${output.slice(-2000)}`,
-  };
+function runTests(scope) {
+  const { output, status } = node([...testArguments(scope), '--passWithNoTests'], {
+    NO_COLOR: '1',
+    FORCE_COLOR: '0',
+  });
+
+  return status === 0 ? null : output;
 }
 
-function trailer(findings) {
-  const fromMutation = findings.some((finding) => finding.rule.startsWith('mutant-'));
+function nothingMutated(scope) {
+  const ran = `${scope.tests.length} test file${scope.tests.length === 1 ? '' : 's'} related to this change ran green`;
 
-  if (!fromMutation || !existsSync(viewablePath)) return '';
-
-  return '\nEvery mutant, killed and surviving: npm run behavior:report\n';
+  return `${ran}; no source under src/ changed, so no mutants were made.`;
 }
 
-function verdict(findings) {
-  return {
-    passed: findings.length === 0,
-    findings,
-    report: behaviorReport(findings) + trailer(findings),
-  };
+function beforeMutation(scope) {
+  const types = typeErrors();
+
+  if (types !== null) return failing([brokenTypes(types)]);
+
+  const red = runTests(scope);
+
+  return red === null ? null : failing([brokenBehavior(red)]);
+}
+
+function afterMutation(outcome) {
+  if (outcome.crashed) return unavailable([mutationUnavailable(outcome.crashed)]);
+
+  const findings = behaviorFindings(outcome.report);
+
+  return findings.length === 0
+    ? passing(outcome.report)
+    : failing(findings, outcome.report);
 }
 
 export function examine(changed) {
-  const live = present(changed);
-  const tests = testScope(live);
+  const scope = scopeOf(changed);
 
-  if (tests.length === 0) return null;
+  if (scope.tests.length === 0 && scope.gone.length === 0) return skipped();
 
-  const red = runTests(tests);
+  const stopped = beforeMutation(scope);
 
-  if (red !== null) return verdict([brokenBehavior(red)]);
+  if (stopped !== null) return stopped;
+  if (scope.mutated.length === 0) return passing(null, nothingMutated(scope));
 
-  const mutated = mutationScope(live);
-
-  if (mutated.length === 0) return verdict([]);
-
-  const outcome = runMutation(mutated);
-
-  if (outcome.crashed) return verdict([sensorCrashed(outcome.crashed)]);
-
-  return verdict(behaviorFindings(outcome.report));
-}
-
-function worktreeChanges() {
-  const seen = spawnSync('git', ['diff', '--name-only', 'HEAD'], {
-    cwd: projectRoot,
-    encoding: 'utf8',
-  });
-
-  return (seen.stdout ?? '').split('\n').filter(Boolean);
+  return afterMutation(runMutation(scope.mutated));
 }
 
 export function requestedScope(argv, session) {
@@ -147,7 +88,7 @@ export function requestedScope(argv, session) {
 
   const recorded = changedThisSession(session);
 
-  return recorded.length > 0 ? recorded : worktreeChanges();
+  return recorded.length > 0 ? recorded : dirtyPaths();
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
@@ -155,6 +96,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     requestedScope(process.argv.slice(2), process.env.SENSOR_SESSION),
   );
 
-  process.stdout.write(answer ? answer.report : 'SENSOR behavior: PASS (0 findings)\n');
-  process.exitCode = !answer || answer.passed ? 0 : 1;
+  process.stdout.write(answer.report);
+  process.exitCode = answer.passed ? 0 : 1;
 }

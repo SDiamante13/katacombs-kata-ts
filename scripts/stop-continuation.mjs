@@ -1,12 +1,11 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
 
-const ledgerRoot = path.resolve(import.meta.dirname, '..', 'reports', 'ledger');
+import { ledgerFile, ledgerRoot } from './ledger-path.mjs';
 
 const MOST_PUSHBACKS = 3;
 
 function markerPath(session) {
-  return path.join(ledgerRoot, `${session || 'unidentified'}.behavior.json`);
+  return ledgerFile(session, '.behavior.json');
 }
 
 function seenIn(session) {

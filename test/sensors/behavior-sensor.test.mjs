@@ -3,9 +3,8 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { behaviorFindings, behaviorReport } from '../../scripts/behavior-findings.mjs';
-import { mutationScope, present, testScope } from '../../scripts/behavior-scope.mjs';
-import { examine } from '../../scripts/behavior-sensor.mjs';
+import { scopeOf } from '../../scripts/behavior-scope.mjs';
+import { examine, requestedScope } from '../../scripts/behavior-sensor.mjs';
 
 const source = 'src/behavior-probe.ts';
 const spec = 'test/behavior-probe.test.ts';
@@ -54,93 +53,51 @@ function uproot() {
   rmSync(path.resolve(spec), { force: true });
 }
 
-function mutantFor(status, line, mutatorName = 'ConditionalExpression') {
-  return {
-    status,
-    mutatorName,
-    replacement: 'true',
-    location: { start: { line, column: 7 } },
-  };
-}
-
 describe('what the behavioral tier looks at', () => {
+  afterEach(uproot);
+
   it('mutates source under src, and never a test', () => {
-    expect(mutationScope(['src/cave.ts', 'test/cave.test.ts', 'scripts/x.mjs'])).toEqual([
-      'src/cave.ts',
+    plant(WEAK);
+
+    expect(scopeOf([source, spec, 'scripts/behavior-sensor.mjs']).mutated).toEqual([
+      source,
     ]);
   });
 
   it('runs tests for both the source and the tests that changed', () => {
-    expect(testScope(['src/cave.ts', 'test/sensors/edit-sensors.test.mjs'])).toEqual([
-      'src/cave.ts',
-      'test/sensors/edit-sensors.test.mjs',
+    plant(WEAK);
+
+    expect(scopeOf([source, spec]).tests).toEqual([source, spec]);
+  });
+
+  it('sees the same file however the caller spells the path', () => {
+    plant(WEAK);
+
+    const spelled = [`./${source}`, path.resolve(source), source];
+
+    expect(scopeOf(spelled).mutated).toEqual([source]);
+  });
+
+  it('refuses a path that points outside the project', () => {
+    expect(scopeOf(['../elsewhere/thing.ts', '/etc/passwd.ts']).tests).toEqual([]);
+  });
+
+  it('keeps a file the change deleted, so its tests still run', () => {
+    expect(scopeOf(['src/deleted-by-this-change.ts']).gone).toEqual([
+      'src/deleted-by-this-change.ts',
     ]);
-  });
-
-  it('drops files that no longer exist', () => {
-    expect(present(['src/deleted-by-this-change.ts', 'package.json'])).toEqual([
-      'package.json',
-    ]);
-  });
-});
-
-describe('what it says about a mutation report', () => {
-  const report = {
-    files: {
-      'src/cave.ts': {
-        mutants: [
-          mutantFor('Survived', 2),
-          mutantFor('Killed', 2),
-          mutantFor('NoCoverage', 9),
-          mutantFor('NoCoverage', 9, 'StringLiteral'),
-        ],
-      },
-    },
-  };
-
-  it('reports a survivor at its own line and column', () => {
-    const [survivor] = behaviorFindings(report);
-
-    expect(survivor).toMatchObject({ rule: 'mutant-survived', where: 'src/cave.ts:2:7' });
-  });
-
-  it('collapses the untried mutants on one line into a single finding', () => {
-    const uncovered = behaviorFindings(report).filter(
-      (finding) => finding.rule === 'mutant-uncovered',
-    );
-
-    expect(uncovered).toHaveLength(1);
-    expect(uncovered[0].detail).toContain('2 mutants');
-  });
-
-  it('says nothing when every mutant died', () => {
-    expect(behaviorFindings({ files: { 'src/cave.ts': { mutants: [] } } })).toEqual([]);
-  });
-
-  it('coaches the first finding of a kind and points the rest at it', () => {
-    const written = behaviorReport(behaviorFindings(report));
-
-    expect(written).toContain('MUTANT-SURVIVED');
-    expect(written).toContain('SENSOR behavior: FAIL (2 findings)');
-  });
-
-  it('shows a handful and counts the rest', () => {
-    const many = Array.from({ length: 12 }, (_, index) => ({
-      rule: 'mutant-survived',
-      where: `src/cave.ts:${index}:1`,
-      detail: 'x',
-    }));
-
-    expect(behaviorReport(many)).toContain('SENSOR behavior: FAIL (12 findings)');
-    expect(behaviorReport(many)).toContain('… and 4 more');
   });
 });
 
 describe('the sensor against a real mutation run', () => {
   afterEach(uproot);
 
-  it('is silent when nothing it watches changed', () => {
-    expect(examine(['README.md', 'scripts/behavior-sensor.mjs'])).toBeNull();
+  it('says it checked nothing rather than reporting a pass', () => {
+    const verdict = examine(['README.md', 'scripts/behavior-sensor.mjs']);
+
+    expect(verdict.outcome).toBe('skip');
+    expect(verdict.report).toContain('SKIP (nothing in scope)');
+    expect(verdict.report).not.toContain('PASS');
   });
 
   it('finds the assertion gap a weak test leaves behind', () => {
@@ -156,7 +113,10 @@ describe('the sensor against a real mutation run', () => {
   it('passes once the tests assert the behaviour the mutants break', () => {
     plant(STRONG);
 
-    expect(examine([source])).toMatchObject({ passed: true });
+    const verdict = examine([source]);
+
+    expect(verdict).toMatchObject({ passed: true, outcome: 'pass' });
+    expect(verdict.report).toMatch(/1 file · \d+ mutants · \d+ killed · 0 survived/);
   }, 120_000);
 
   it('stops at red tests instead of mutating them', () => {
@@ -168,4 +128,18 @@ describe('the sensor against a real mutation run', () => {
     expect(verdict.report).toContain('broken-behavior');
     expect(verdict.report).not.toContain('mutant-');
   }, 120_000);
+});
+
+describe('the scope it works out for itself', () => {
+  afterEach(uproot);
+
+  it('sees a file the change created, which no diff against HEAD lists', () => {
+    plant(WEAK);
+
+    expect(requestedScope([], undefined)).toContain(source);
+  });
+
+  it('prefers what the caller named over anything it could work out', () => {
+    expect(requestedScope(['src/named.ts'], undefined)).toEqual(['src/named.ts']);
+  });
 });

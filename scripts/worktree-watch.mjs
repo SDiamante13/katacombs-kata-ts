@@ -1,22 +1,10 @@
-import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { dirtyPaths } from './git-changes.mjs';
+import { ledgerFile, ledgerRoot } from './ledger-path.mjs';
+
 const projectRoot = path.resolve(import.meta.dirname, '..');
-const watchRoot = path.join(projectRoot, 'reports', 'ledger');
-
-function dirtyPaths() {
-  const seen = spawnSync('git', ['status', '--porcelain', '--untracked-files=all'], {
-    cwd: projectRoot,
-    encoding: 'utf8',
-  });
-
-  return (seen.stdout ?? '')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => line.slice(3).trim())
-    .map((entry) => entry.split(' -> ').at(-1));
-}
 
 function stampOf(file) {
   const full = path.join(projectRoot, file);
@@ -33,11 +21,11 @@ export function movedFiles(before, after) {
 }
 
 function snapshotPath(session) {
-  return path.join(watchRoot, `${session || 'unidentified'}.worktree.json`);
+  return ledgerFile(session, '.worktree.json');
 }
 
 function remember(session, taken) {
-  mkdirSync(watchRoot, { recursive: true });
+  mkdirSync(ledgerRoot, { recursive: true });
   writeFileSync(snapshotPath(session), JSON.stringify(taken));
 }
 

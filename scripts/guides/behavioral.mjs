@@ -1,4 +1,19 @@
 export const behavioral = {
+  'sensor-suppression': [
+    "This comment does not fix anything. It removes a sensor's ability to say so, silently, for everyone who reads the file afterwards.",
+    'Whatever it silences is still true: a surviving mutant still means the assertion is missing, a duplicate is still a second copy, a credential is still in the file. Fix the cause the sensor named.',
+    'Not this: switching a sensor off from inside the file it would have reported. If a rule genuinely does not apply here, that is a change to the config, where it can be seen and reviewed — and it needs explicit approval.',
+  ],
+  'broken-types': [
+    'The compiler rejects this code. The tests can still be green while it does — vitest strips types rather than checking them, so a type error sails through a passing suite and surfaces at the build.',
+    'Fix it where the type is wrong, not where the error is reported. An error at a call site is usually a signature one file away that no longer says what the function does.',
+    'Not this: an `any`, a cast, or a `@ts-expect-error` to get past the gate. Each one moves the failure to somewhere with less information about it.',
+  ],
+  'mutation-unavailable': [
+    'The mutation run did not finish, so nothing here has been checked for weak assertions. This is not a finding about your code.',
+    'Read the output below for the cause — a crashed test runner, a sandbox that could not be built, a config that no longer parses. Fix that, then run `npm run behavior:sensor` again.',
+    'Not this: treating a sensor that could not run as a sensor with nothing to say.',
+  ],
   'broken-behavior': [
     'The tests are red. Nothing above this line means anything until they are green — a mutation score over a failing suite is noise, so this tier stops here.',
     'Read the assertion that failed before you touch the code. Either the behaviour regressed, in which case fix the code, or the behaviour changed on purpose, in which case the test is the specification you are updating and it deserves the same care as the change.',

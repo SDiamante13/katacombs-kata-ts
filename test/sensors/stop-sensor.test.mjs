@@ -56,6 +56,9 @@ describe('what the Stop hook answers', () => {
   });
 
   it('lets a turn end when the tier had nothing to look at', () => {
+    const nothing = { passed: true, outcome: 'skip', report: 'SKIP' };
+
+    expect(stopResponse(nothing, true)).toEqual({ continue: true });
     expect(stopResponse(null, true)).toEqual({ continue: true });
   });
 

@@ -10,6 +10,7 @@ export default {
   reporters: ['json', 'html'],
   jsonReporter: { fileName: 'reports/mutation/mutation.json' },
   htmlReporter: { fileName: 'reports/mutation/mutation.html' },
+  ignorePatterns: ['.stryker-tmp', 'reports', 'capture', 'docs', 'context'],
   tempDirName: '.stryker-tmp',
   cleanTempDir: true,
   logLevel: 'off',

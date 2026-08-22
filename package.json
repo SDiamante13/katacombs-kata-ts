@@ -9,7 +9,7 @@
     "behavior:report": "node scripts/behavior-report.mjs",
     "behavior:sensor": "node scripts/behavior-sensor.mjs",
     "check": "npm run typecheck && npm run secret:sensor && npm test && npm run lint:sensor && npm run dup:sensor && npm run docs:sensor && npm run behavior:sensor",
-    "check:behavioral": "npm run typecheck && npm test",
+    "check:behavioral": "npm run typecheck && npm test && npm run behavior:sensor",
     "docs:sensor": "node scripts/docs-sensor.mjs",
     "dup:sensor": "node scripts/jscpd-sensor.mjs",
     "format": "prettier --ignore-unknown --write .",

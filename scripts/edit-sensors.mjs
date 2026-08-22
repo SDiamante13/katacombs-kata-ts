@@ -1,9 +1,10 @@
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 import { node } from './node-runner.mjs';
 
-const projectRoot = path.resolve(import.meta.dirname, '..');
+// realpath: a worktree reached through a symlink is still this project.
+const projectRoot = realpathSync(path.resolve(import.meta.dirname, '..'));
 const eslintBin = path.join(projectRoot, 'node_modules', 'eslint', 'bin', 'eslint.js');
 const prettierBin = path.join(
   projectRoot,

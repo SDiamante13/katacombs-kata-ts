@@ -12,7 +12,7 @@ How each sensor is wired, and which files to copy into your own project.
 | `eslint.config.mjs`                   | structural + design | thresholds and type safety; boundary and purity pending   | live    |
 | `scripts/sensor-guides.mjs`           | structural + design | maps a rule id to its guide, with a fallback for the rest | live    |
 | `scripts/guides/`                     | structural + design | the guide text, one file per tier                         | live    |
-| `scripts/eslint-rules/`               | structural          | four rules you write yourself, three of them about prose  | live    |
+| `scripts/eslint-rules/`               | structural          | five rules you write yourself, three of them about prose  | live    |
 | `scripts/sensor-report.mjs`           | all                 | the one `SENSOR x: PASS/FAIL` line every sensor prints    | live    |
 | `scripts/eslint-sensor-formatter.mjs` | structural + design | turns a rule id into a coaching guide                     | live    |
 | `.prettierrc.json`                    | none                | formatting, auto-fixed and never reported                 | live    |
@@ -175,7 +175,7 @@ A sensor you cannot copy is not a sensor you can adopt.
 ## The behavioral sensor
 
 ```sh
-npm run behavior:sensor   # the tests, then the mutants they miss — coached
+npm run behavior:sensor   # types, then the tests, then the mutants they miss — coached
 npm run behavior:report   # opens the last run's HTML report
 ```
 
@@ -185,24 +185,78 @@ were wrong, would this test say so?** Stryker changes the code on purpose — fl
 empties a string, inverts a condition — and reruns the tests. A mutant that dies is a test doing its
 job. A mutant that survives is a line your tests execute and do not care about.
 
-The sensor runs in two stages, and the order is the point:
+### An escalation, and each stage gates the next
 
-1. **vitest, on the tests related to what changed.** If they are red, it stops there and says so. A
-   mutation score over a failing suite is noise, and mutating a red suite wastes the seconds this
-   tier is budgeted.
-2. **Stryker, scoped with `--mutate` to the changed source files.** About five seconds from cold on
-   a small change, which is what makes end-of-turn a viable trigger.
+1. **`tsc --noEmit`.** Vitest strips types rather than checking them, so a type error rides through
+   a green suite. If the compiler is unhappy, everything below this line is measuring the wrong
+   program.
+2. **vitest, on the tests related to what changed.** If they are red, the tier stops and says so. A
+   mutation score over a failing suite is noise. (If the change _deleted_ a source file, the tier
+   widens to the whole product suite instead — a deleted file cannot be named to `vitest related`,
+   and its importers are exactly what needs checking.)
+3. **Stryker, scoped with `--mutate` to the changed source files.**
 
-Findings come back in the same shape as every other sensor, with two rules:
+Each stage is cheap next to the one after it, and a failure at any stage makes the next stage's
+answer meaningless. That is the whole reason for the order.
+
+### Four things it can say, and they are not interchangeable
+
+| Line                                       | Means                                                           |
+| ------------------------------------------ | --------------------------------------------------------------- |
+| `SENSOR behavior: PASS (0 findings)`       | It ran, and here is the count of what it ran on                 |
+| `SENSOR behavior: FAIL (n findings)`       | It ran and found n things                                       |
+| `SENSOR behavior: SKIP (nothing in scope)` | Nothing it watches changed. **Not a pass** — it checked nothing |
+| `SENSOR behavior: UNAVAILABLE`             | The mutation run did not finish, so nothing has been checked    |
+
+The distinction between the first and third is the point. A sensor whose "all clear" is
+byte-identical whether it examined forty mutants or zero files has told you nothing, and the reader
+cannot tell which happened. So a pass always carries its accounting:
+
+```
+SENSOR behavior: PASS (0 findings)
+  3 files · 30 mutants · 25 killed · 5 survived · 0 untried
+```
+
+Timeouts count as killed — a mutant that hangs the suite was detected by it. Mutants that could not
+be evaluated at all (a mutation that does not compile, a crash in the runner) are counted separately
+as `not evaluated`, because "we could not try" is not "we tried and it was fine".
+
+`UNAVAILABLE` is the same rule the secret sensor follows: **a sensor that cannot run must never
+report green.**
+
+### The findings
 
 | Rule               | Fires when                                                          |
 | ------------------ | ------------------------------------------------------------------- |
+| `broken-types`     | `tsc` rejects the change; the stages below it are not run           |
+| `broken-behavior`  | the related tests are red; mutation is not run                      |
 | `mutant-survived`  | a test executes the line, the behaviour changed, and nothing failed |
 | `mutant-uncovered` | no test reaches the line at all — a coverage gap in front of that   |
 
 `mutant-uncovered` findings are collapsed to one per line, because twelve untried mutants on one
 line are one piece of news. Eight findings print in full; the rest are counted, and the HTML report
-has all of them.
+has all of them. When several tests fail at once, `broken-behavior` keeps each failure's name and
+assertion — a flat tail of the output drops the first one, which is usually the one that matters.
+
+### What it costs
+
+Measured on this repository, on a ten-core machine, three runs each:
+
+| Change                                     | Wall clock |
+| ------------------------------------------ | ---------- |
+| Nothing it watches changed                 | **~0.06s** |
+| Related tests are red (stops at stage 2)   | **~1.2s**  |
+| One small file, 10 mutants, well covered   | **~6s**    |
+| Three files, 30 mutants, well covered      | **~7.5s**  |
+| One file, 442 mutants, almost none covered | **~8s**    |
+
+About five seconds of that is fixed — typecheck, sandbox build, and the baseline test run — and the
+marginal cost is roughly a test run per _covered_ mutant. Uncovered mutants are nearly free, which
+is why the 442-mutant row is not fifty times the 10-mutant one.
+
+Note what holds the right-hand column down: the structural sensor. A branch-heavy function is
+exactly what makes mutation testing slow, and `complexity: 5` refuses to let one exist. The cheap
+tier is paying for the expensive tier's trigger.
 
 ### Why it fires when the agent stops
 
@@ -225,8 +279,17 @@ A Stop hook that blocks whenever it has something to say is a loop. Three guards
   Fix some and break others and the fingerprint changes, which is new information and earns another.
 - **A cap of three** push-backs per session, whatever the agent does in between.
 
-Past those, the sensor still reports — it just stops standing in the doorway. `systemMessage`
-carries the findings without blocking.
+Past those, the sensor still reports — it just stops standing in the doorway. The findings go out on
+`systemMessage` _and_ on stderr, because only one of those is verified to reach the agent in each
+runtime.
+
+### Suppression
+
+Stryker honours `// Stryker disable` comments, which is a suppression an agent can write. There is
+no flag to turn that off, so `sensors/no-sensor-suppression` reports it as a structural finding
+instead — along with `jscpd:ignore` and `gitleaks:allow`. Same philosophy as
+`--ignore-gitleaks-allow`: **a sensor you can switch off from inside the file it would have reported
+is not a sensor.** Turning a rule off is a change to the config, where it can be seen and reviewed.
 
 For what this tier is pointed at and what it deliberately leaves alone, see
 [`context/mutation-scope.md`](context/mutation-scope.md).
