@@ -1,5 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 
+import { readJsonOr } from './json-file.mjs';
 import { ledgerFile, ledgerRoot } from './ledger-path.mjs';
 
 const MOST_PUSHBACKS = 3;
@@ -9,15 +10,7 @@ function markerPath(session) {
 }
 
 function seenIn(session) {
-  const marker = markerPath(session);
-
-  if (!existsSync(marker)) return [];
-
-  try {
-    return JSON.parse(readFileSync(marker, 'utf8'));
-  } catch {
-    return [];
-  }
+  return readJsonOr(markerPath(session), []);
 }
 
 export function fingerprint(findings) {

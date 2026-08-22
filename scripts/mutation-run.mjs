@@ -2,13 +2,13 @@ import {
   existsSync,
   mkdirSync,
   readdirSync,
-  readFileSync,
   renameSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
 
+import { readJsonOr } from './json-file.mjs';
 import { node } from './node-runner.mjs';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
@@ -95,18 +95,8 @@ function publishReport(files, at) {
   rmSync(runRoot, { recursive: true, force: true });
 }
 
-function readJson(file) {
-  if (!existsSync(file)) return null;
-
-  try {
-    return JSON.parse(readFileSync(file, 'utf8'));
-  } catch {
-    return null;
-  }
-}
-
 export function reportStamp() {
-  return readJson(stampPath);
+  return readJsonOr(stampPath);
 }
 
 // Only its own report: a slow run must not mark a newer one stale.
@@ -140,7 +130,7 @@ export function runMutation(files, run = node) {
     return { crashed: output };
   }
 
-  const report = readJson(produced);
+  const report = readJsonOr(produced);
 
   if (report === null) {
     rmSync(runRoot, { recursive: true, force: true });
