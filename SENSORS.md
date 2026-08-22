@@ -324,8 +324,15 @@ SENSORS DOCTOR
 ```
 
 `last fired` is the only line that is evidence. The other two say the wiring is _declared_; a hook
-can be perfectly declared and never run. Run it after you first wire a runtime up, and be suspicious
-of `never`.
+can be perfectly declared and never run.
+
+Read `never` carefully, because it means two different things. The mark lives in gitignored
+`reports/`, so a fresh clone or a new worktree reads `never` however well the hooks work — that is a
+cold start, not a diagnosis. **`never` after you have made an edit is the diagnosis.** Make one
+trivial edit, run the doctor again, and if it still says `never`, the hook is not firing.
+
+Codex approval is per machine rather than per checkout: approve once and your clones and worktrees
+inherit it.
 
 **A hook cannot verify that hooks run.** That check has to live in the tier below, which is why the
 pre-commit hook asserts it when you have told it not to repeat the cheap sensors:
