@@ -55,6 +55,23 @@ And one thing that is checked but not verified end to end: the non-blocking `sys
 confirmed to render in Claude Code and **unverified in Codex CLI**. That is why the same findings
 also go to stderr.
 
+## Where the Stop hook gets its scope
+
+The per-edit hook records every path it sees into a session ledger. That ledger is **append-only for
+the life of the session**, so by the twentieth turn it names every file the session has ever
+touched — including files that have since been committed or reverted. Mutating all of them at the
+end of every turn makes the end-of-turn cost grow with the session rather than with the change.
+
+So the Stop hook intersects the ledger with what is still dirty in the worktree. The scope is then
+bounded by the size of the change, not by how long the session has run, and nothing is lost: a file
+that is no longer different from `HEAD` has nothing left to check. If the ledger is empty — the
+per-edit hook never fired, or a shell command wrote a file behind its back — the scope falls back to
+the dirty worktree, the same fallback the CLI uses.
+
+The ledger stays session-scoped rather than being replaced by the worktree outright, because two
+sessions can share one checkout, and one session's Stop hook has no business mutating the other's
+work in progress.
+
 ## No incremental mode
 
 Stryker can cache a previous run and only re-test what changed. It is switched off. A scoped run

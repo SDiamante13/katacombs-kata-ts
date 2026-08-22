@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Stop, for both runtimes: the cheap sensors, then the tests, then the mutants.
+import { requestedScope } from './behavior-sensor.mjs';
 import { readHookPayload } from './hook-io.mjs';
 import { agentTierFires } from './sensor-tier.mjs';
-import { changedThisSession } from './session-ledger.mjs';
+
 import { shouldPushBack } from './stop-continuation.mjs';
 import { stopResponse } from './stop-response.mjs';
 import { verdictFor } from './stop-verdict.mjs';
@@ -16,7 +17,7 @@ if (!agentTierFires()) {
 }
 
 const payload = await readHookPayload();
-const changed = changedThisSession(payload.session_id);
+const changed = requestedScope([], payload.session_id);
 const verdict = verdictFor(changed);
 
 const pushBack =

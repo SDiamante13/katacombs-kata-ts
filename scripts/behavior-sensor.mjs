@@ -132,12 +132,17 @@ export function examine(changed) {
   return afterMutation(runMutation(scope.mutated), startedAt);
 }
 
+// The ledger is append-only, so it outlives the change — context/mutation-scope.md.
 export function requestedScope(argv, session) {
   if (argv.length > 0) return argv;
 
   const recorded = changedThisSession(session);
 
-  return recorded.length > 0 ? recorded : dirtyPaths();
+  if (recorded.length === 0) return dirtyPaths();
+
+  const dirty = new Set(dirtyPaths());
+
+  return recorded.filter((file) => dirty.has(file));
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -25,11 +25,26 @@ describe('a session id is untrusted input that names a file', () => {
     );
   });
 
-  it('collapses every unsafe id to one name rather than inventing one', () => {
-    expect(ledgerFile('../a', '.txt')).toBe(ledgerFile('/b', '.txt'));
+  it('keeps two unsafe ids apart instead of collapsing them together', () => {
+    expect(ledgerFile('../a', '.txt')).not.toBe(ledgerFile('/b', '.txt'));
   });
 
   it('never throws out of the hook when the ledger cannot be written', () => {
     expect(() => record('\0bad', ['src/x.ts'])).not.toThrow();
+  });
+});
+
+describe('two sessions with unusable ids must not share one ledger', () => {
+  it('gives different rejected ids different files', () => {
+    expect(ledgerFile('team/alpha', '.txt')).not.toBe(ledgerFile('team/beta', '.txt'));
+  });
+
+  it('gives the same rejected id the same file every time', () => {
+    expect(ledgerFile('team/alpha', '.txt')).toBe(ledgerFile('team/alpha', '.txt'));
+  });
+
+  it('keeps only a genuinely absent id in the shared bucket', () => {
+    expect(path.basename(ledgerFile('', '.txt'))).toBe('unidentified.txt');
+    expect(path.basename(ledgerFile(undefined, '.txt'))).toBe('unidentified.txt');
   });
 });
