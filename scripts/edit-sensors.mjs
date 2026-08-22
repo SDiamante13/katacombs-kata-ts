@@ -13,7 +13,6 @@ const prettierBin = path.join(
 );
 
 const LINTABLE = /\.(js|mjs|ts)$/;
-const DOCUMENT = /\.md$/;
 const CLONE_SCANNED = /^(src|test|scripts)\//;
 const OUT_OF_SCOPE =
   /^(node_modules|reports|dist|build|coverage|\.stryker-tmp|docs|capture)\//;
@@ -74,11 +73,6 @@ const sensors = [
     name: 'gitleaks',
     targets: (files) => files,
     run: (targets) => node(['scripts/gitleaks-sensor.mjs', ...targets]),
-  },
-  {
-    name: 'docs',
-    targets: (files) => files.filter((file) => DOCUMENT.test(file)),
-    run: (targets) => node(['scripts/docs-sensor.mjs', ...targets]),
   },
 ];
 

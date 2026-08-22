@@ -4,7 +4,8 @@ A text adventure game, built from scratch by a coding agent with **three quality
 wired into its loop. The game is the vehicle. The sensors are the point.
 
 Companion repo for the _AI Coding Agent Code Quality_ workshop.
-Slides: **https://sdiamante13.github.io/katacombs-kata-ts/**
+Slides: not published yet — this repo is still under development. The deck will go up at
+`https://sdiamante13.github.io/katacombs-kata-ts/` when it is ready.
 
 ---
 

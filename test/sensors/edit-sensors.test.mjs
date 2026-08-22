@@ -55,7 +55,19 @@ describe('the per-edit sensor run', () => {
 
     expect(verdict.report).toContain('EDIT SENSORS:');
     expect(verdict.report).toContain('gitleaks PASS');
-    expect(verdict.report).toContain('docs SKIP');
+    expect(verdict.report).toContain('jscpd PASS');
+  });
+
+  // The docs sensor checks a doc against package.json and against files on
+  // disk, so editing either of those breaks it without touching the doc. A
+  // per-edit trigger fires on the one case it should stay quiet for -- a doc
+  // written ahead of the code -- and misses every case that matters. It runs
+  // at the completion boundary instead.
+  it('leaves documentation to the completion boundary', () => {
+    const doc = scratch.file('stale.md', '```sh\nnpm run nothing:here\n```\n');
+    const verdict = inspect([doc]);
+
+    expect(verdict.passed).toBe(true);
   });
 
   it('fixes formatting silently instead of reporting it', () => {

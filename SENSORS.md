@@ -307,19 +307,42 @@ Nothing at all, when the edit is clean. That is deliberate: a sensor that speaks
 a sensor the agent learns to skim. On a finding it gets a roll call and the coaching:
 
 ```text
-EDIT SENSORS: eslint SKIP · jscpd PASS · gitleaks PASS · docs FAIL
+EDIT SENSORS: eslint FAIL · jscpd PASS · gitleaks PASS
 
-SENSOR docs: FAIL (2 findings)
+SENSOR eslint: FAIL (2 findings)
 
-test/probe.md:6 ERROR missing-script
-  `npm run nonexistent:script` is documented, but package.json has no "nonexistent:script" script.
+test/probe.mjs:1:8 ERROR max-params
+  Function 'describeRoom' has too many parameters (5). Maximum allowed is 4.
 
-  STALE-DOC
-  The documentation names something that is not there. ...
+  TOO-MANY-PARAMETERS
+  Long Parameter List, with Data Clumps underneath it: parameters that always
+  travel together are a concept nobody has named. ...
 ```
 
 The roll call names the sensors that passed as well as the one that failed, so the agent learns
 what is watching rather than only what it broke.
+
+### Why the documentation sensor is not in that list
+
+It is as cheap as ESLint, so on cost alone it belongs here. It was wired here first, and it was
+wrong in both directions at once — it **fired** while a document was deliberately ahead of the code,
+which is the normal state while a design is still settling, and it **stayed silent** when a script
+was renamed in `package.json` and left every document naming it broken.
+
+The difference is not cost, it is what the sensor measures against:
+
+| Sensor   | Invalidated by editing                       | Trigger             |
+| -------- | -------------------------------------------- | ------------------- |
+| ESLint   | only the file itself                         | after every edit    |
+| gitleaks | only the file itself                         | after every edit    |
+| jscpd    | any other file — so it scans the whole tree  | after every edit    |
+| docs     | `package.json`, or any file a link points at | completion boundary |
+
+**Trigger frequency matches sensor cost, and trigger moment matches what the sensor compares
+against.** A sensor whose invariant spans two artifacts says nothing true until both have settled,
+and a sensor that can be broken by editing a file it is not watching will miss the break. The
+documentation sensor runs at the commit boundary over every tracked document, which is what finally
+catches the rename. Full reasoning in [`context/sensor-triggers.md`](context/sensor-triggers.md).
 
 ### Running both tiers without running everything twice
 
