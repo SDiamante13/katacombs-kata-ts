@@ -3,6 +3,7 @@
 // but a shell command can write one too, so the worktree is watched either way.
 import { inspect } from '../../scripts/edit-sensors.mjs';
 import { editedPaths, readHookPayload } from '../../scripts/hook-io.mjs';
+import { stamp } from '../../scripts/sensor-liveness.mjs';
 import { record } from '../../scripts/session-ledger.mjs';
 import { agentTierFires } from '../../scripts/sensor-tier.mjs';
 import { changedSinceLastLook } from '../../scripts/worktree-watch.mjs';
@@ -10,6 +11,8 @@ import { changedSinceLastLook } from '../../scripts/worktree-watch.mjs';
 if (!agentTierFires()) process.exit(0);
 
 const payload = await readHookPayload();
+
+stamp('claude');
 const verdict = inspect([
   ...editedPaths(payload),
   ...changedSinceLastLook(payload.session_id),

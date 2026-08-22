@@ -16,6 +16,7 @@
     "lint:sensor": "eslint . --format ./scripts/eslint-sensor-formatter.mjs",
     "prepare": "husky",
     "secret:sensor": "node scripts/gitleaks-sensor.mjs",
+    "sensors:doctor": "node scripts/sensors-doctor.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

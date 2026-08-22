@@ -9,6 +9,9 @@ fi
 if node scripts/git-tier.mjs; then
   npm run check
 else
+  # A hook that never fired looks exactly like a hook with nothing to say, so
+  # SENSORS=agent has to prove the agent tier actually ran before we trust it.
+  node scripts/sensors-doctor.mjs --assert || exit 1
   echo "SENSORS=agent — cheap sensors already ran per edit; checking behavior only."
   npm run check:behavioral
 fi

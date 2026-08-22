@@ -297,6 +297,52 @@ one thing they agree on.
 Codex takes its answer as JSON on stdout — `{"decision": "block", "reason": "..."}` — rather than
 as an exit code.
 
+**Codex asks for a one-time approval the first time a hook fires, and nothing in the repository can
+tell you it is waiting.** Before you approve it there are no events, no ledger entries, no error and
+no log line. Silence before approval looks exactly like silence after a clean edit — which is the
+whole failure mode this apparatus exists to prevent, reproduced in the wiring of the apparatus
+itself.
+
+So there is a command whose only job is to answer _is this thing actually on?_
+
+```sh
+npm run sensors:doctor
+```
+
+```text
+SENSORS DOCTOR
+
+  Claude Code
+    manifest    .claude/settings.json  ok
+    adapter     .claude/hooks/post-edit-sensor.mjs  ok
+    last fired  2026-08-22 14:13
+
+  Codex CLI
+    manifest    .codex/hooks.json  ok
+    adapter     .codex/hooks/post-edit-sensor.mjs  ok
+    last fired  never
+```
+
+`last fired` is the only line that is evidence. The other two say the wiring is _declared_; a hook
+can be perfectly declared and never run. Run it after you first wire a runtime up, and be suspicious
+of `never`.
+
+**A hook cannot verify that hooks run.** That check has to live in the tier below, which is why the
+pre-commit hook asserts it when you have told it not to repeat the cheap sensors:
+
+```sh
+node scripts/sensors-doctor.mjs --assert
+```
+
+Under `SENSORS=agent` the commit gate skips the cheap sensors on the claim that the agent loop
+already ran them. That assertion demands evidence — a hook run more recent than the newest staged
+file — and fails the commit rather than taking the claim on trust.
+
+One thing the doctor deliberately does not do: `codex exec` **does not re-verify hook trust once you
+have approved it**. The manifest's timeout, the hook's path, and the hook script's own contents can
+all be changed afterwards and non-interactive runs will re-run them without asking again. Nothing
+here notices that, and nothing here pretends to — the checksum tamper sensor is what covers it.
+
 That difference is the whole argument for keeping the sensors out of the hooks. The core knows
 nothing about either runtime; the adapters know nothing about linting. Porting to a third agent is
 one file.

@@ -33,7 +33,7 @@ export function movedFiles(before, after) {
 }
 
 function snapshotPath(session) {
-  return path.join(watchRoot, `${session}.worktree.json`);
+  return path.join(watchRoot, `${session || 'unidentified'}.worktree.json`);
 }
 
 function remember(session, taken) {
@@ -42,7 +42,7 @@ function remember(session, taken) {
 }
 
 export function baseline(session) {
-  if (session) remember(session, snapshot());
+  remember(session, snapshot());
 }
 
 export function changedSinceLastLook(session) {
@@ -50,7 +50,7 @@ export function changedSinceLastLook(session) {
   const before = existsSync(stored) ? JSON.parse(readFileSync(stored, 'utf8')) : null;
   const after = snapshot();
 
-  if (session) remember(session, after);
+  remember(session, after);
 
   return before === null ? [] : movedFiles(before, after);
 }
