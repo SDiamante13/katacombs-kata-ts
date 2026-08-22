@@ -1,8 +1,23 @@
 export const behavioral = {
+  'mutation-suppressed': [
+    'A comment in this file told the mutation runner to skip it, so these mutants were never tried and the tier cannot say anything about the tests that cover them.',
+    'Remove the comment and answer the finding underneath it. If the mutant it was hiding is a false alarm — an equivalent mutant that no test could possibly kill — say so in the test, by asserting the behaviour that makes it equivalent.',
+    'Not this: leaving the suppression because the sensor is now quiet. Quiet is what the comment buys; it is not what it means.',
+  ],
+  'untested-source': [
+    'No test file imports this source at all, so there is nothing for mutation testing to measure. This is the coverage gap in its largest form: not a line the tests miss, a file they have never heard of.',
+    'Write the first test through the public entry point — the smallest one that asserts a real value, not that the module loads. One honest assertion turns this into ordinary mutant findings you can work through.',
+    'Not this: a test that imports the module and asserts nothing, which converts a file nobody tests into a file whose mutants all survive.',
+  ],
   'sensor-suppression': [
     "This comment does not fix anything. It removes a sensor's ability to say so, silently, for everyone who reads the file afterwards.",
     'Whatever it silences is still true: a surviving mutant still means the assertion is missing, a duplicate is still a second copy, a credential is still in the file. Fix the cause the sensor named.',
     'Not this: switching a sensor off from inside the file it would have reported. If a rule genuinely does not apply here, that is a change to the config, where it can be seen and reviewed — and it needs explicit approval.',
+  ],
+  'cheap-tier-first': [
+    'The millisecond sensors still have findings on the files this turn changed, so the expensive tier has not run. Its answer would be about code that is going to change again as soon as you fix these.',
+    'Fix what is listed below, then the behavioral tier runs on its own at the end of the next turn.',
+    'Not this: reaching for the expensive sensor first because its findings sound more interesting. Cheap, then expensive, is the whole shape of the loop.',
   ],
   'broken-types': [
     'The compiler rejects this code. The tests can still be green while it does — vitest strips types rather than checking them, so a type error sails through a passing suite and surfaces at the build.',

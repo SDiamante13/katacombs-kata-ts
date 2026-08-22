@@ -2,67 +2,12 @@ import { guides, kernels } from './sensor-guides.mjs';
 import { coach, indent, sensorReport } from './sensor-report.mjs';
 
 const MOST = 8;
-const MOST_BLOCKS = 4;
-const BLOCK_LINES = 14;
-const PLAIN_TAIL = 30;
 
 const DETECTED = new Set(['Killed', 'Timeout']);
-const NOT_EVALUATED = new Set(['CompileError', 'RuntimeError', 'Ignored', 'Pending']);
+const NOT_EVALUATED = new Set(['CompileError', 'RuntimeError', 'Pending']);
 
 function guideFor(rule) {
   return { name: rule, text: guides[rule], kernel: kernels[rule] };
-}
-
-function summaryLines(lines) {
-  return lines.filter((line) => /^\s*(Test Files|Tests)\s/.test(line));
-}
-
-function failureBlocks(lines) {
-  return lines
-    .map((line, index) => (/(^|\s)FAIL(\s|$)/.test(line) ? index : -1))
-    .filter((index) => index >= 0)
-    .slice(0, MOST_BLOCKS)
-    .map((index) => lines.slice(index, index + BLOCK_LINES).join('\n'));
-}
-
-// A flat tail drops the first failure when several tests break at once.
-function readable(output) {
-  const lines = output.trim().split('\n');
-  const blocks = failureBlocks(lines);
-
-  if (blocks.length === 0) return lines.slice(-PLAIN_TAIL);
-
-  return [...summaryLines(lines), '', ...blocks];
-}
-
-export function brokenBehavior(output) {
-  return {
-    rule: 'broken-behavior',
-    where: 'vitest',
-    detail: ['The tests related to this change failed.', ...readable(output)].join('\n'),
-  };
-}
-
-export function brokenTypes(output) {
-  return {
-    rule: 'broken-types',
-    where: 'tsc',
-    detail: [
-      'The compiler rejects this change, so the tests below it prove nothing.',
-      ...output.trim().split('\n').slice(0, PLAIN_TAIL),
-    ].join('\n'),
-  };
-}
-
-export function mutationUnavailable(output) {
-  return {
-    rule: 'mutation-unavailable',
-    where: 'stryker',
-    detail: [
-      'The mutation run produced no report, so nothing was checked for weak assertions.',
-      ...output.trim().split('\n').slice(-PLAIN_TAIL),
-    ].join('\n'),
-  };
 }
 
 function startOf(mutant) {
@@ -93,6 +38,22 @@ function uncovered(file, [line, count]) {
   };
 }
 
+export function untestedSource(file) {
+  return {
+    rule: 'untested-source',
+    where: file,
+    detail: 'No test file imports this source, so no mutant in it was ever tried.',
+  };
+}
+
+function suppressed(file, [line, count]) {
+  return {
+    rule: 'mutation-suppressed',
+    where: `${file}:${line}`,
+    detail: `A comment here told the mutation runner to skip ${count} mutant${count === 1 ? '' : 's'}.`,
+  };
+}
+
 function withStatus(data, status) {
   return (data.mutants ?? []).filter((mutant) => mutant.status === status);
 }
@@ -111,7 +72,11 @@ export function behaviorFindings(report) {
     ),
   );
 
-  return [...survived, ...missed];
+  const silenced = filesIn(report).flatMap(([file, data]) =>
+    [...tallyLines(withStatus(data, 'Ignored'))].map((entry) => suppressed(file, entry)),
+  );
+
+  return [...silenced, ...survived, ...missed];
 }
 
 function count(mutants, statuses) {

@@ -187,6 +187,10 @@ job. A mutant that survives is a line your tests execute and do not care about.
 
 ### An escalation, and each stage gates the next
 
+0. **The cheap sensors, at the Stop hook only.** eslint, jscpd and gitleaks over what the turn
+   changed, in about a second. If the millisecond tier still has findings, the expensive tier does
+   not run — its answer would be about code that is about to change again. This is the layered loop
+   enforcing itself rather than being described.
 1. **`tsc --noEmit`.** Vitest strips types rather than checking them, so a type error rides through
    a green suite. If the compiler is unhappy, everything below this line is measuring the wrong
    program.
@@ -214,8 +218,11 @@ cannot tell which happened. So a pass always carries its accounting:
 
 ```
 SENSOR behavior: PASS (0 findings)
-  3 files · 30 mutants · 25 killed · 5 survived · 0 untried
+  3 files · 30 mutants · 30 killed · 0 survived · 0 untried
 ```
+
+A pass has nothing surviving and nothing untried by construction — either would be a finding. The
+line is there so you can see the _size_ of the check that passed.
 
 Timeouts count as killed — a mutant that hangs the suite was detected by it. Mutants that could not
 be evaluated at all (a mutation that does not compile, a crash in the runner) are counted separately
@@ -286,10 +293,18 @@ runtime.
 ### Suppression
 
 Stryker honours `// Stryker disable` comments, which is a suppression an agent can write. There is
-no flag to turn that off, so `sensors/no-sensor-suppression` reports it as a structural finding
-instead — along with `jscpd:ignore` and `gitleaks:allow`. Same philosophy as
+no flag to turn that off, so it is closed twice, in both tiers that could be fooled by it:
+
+- `sensors/no-sensor-suppression` reports the comment as a structural finding — along with
+  `jscpd:ignore` and `gitleaks:allow`.
+- The behavioral verdict refuses it directly. A suppressed mutant comes back from Stryker with
+  status `Ignored`, and `mutation-suppressed` turns that into a finding rather than a quiet line in
+  the accounting.
+
+The second one matters because the first lives in a different tier. A sensor that relies on another
+sensor to notice it has been switched off is one config change away from silent. Same philosophy as
 `--ignore-gitleaks-allow`: **a sensor you can switch off from inside the file it would have reported
-is not a sensor.** Turning a rule off is a change to the config, where it can be seen and reviewed.
+is not a sensor.**
 
 For what this tier is pointed at and what it deliberately leaves alone, see
 [`context/mutation-scope.md`](context/mutation-scope.md).

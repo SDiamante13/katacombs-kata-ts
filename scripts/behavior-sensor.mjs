@@ -1,18 +1,14 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import {
-  behaviorFindings,
-  brokenBehavior,
-  brokenTypes,
-  mutationUnavailable,
-} from './behavior-findings.mjs';
+import { behaviorFindings, untestedSource } from './behavior-findings.mjs';
 import { scopeOf } from './behavior-scope.mjs';
 import { failing, passing, skipped, unavailable } from './behavior-verdict.mjs';
 import { dirtyPaths } from './git-changes.mjs';
 import { runMutation } from './mutation-run.mjs';
 import { node } from './node-runner.mjs';
 import { changedThisSession } from './session-ledger.mjs';
+import { brokenBehavior, brokenTypes, mutationUnavailable } from './stage-findings.mjs';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const vitestBin = path.join(projectRoot, 'node_modules', 'vitest', 'vitest.mjs');
@@ -20,8 +16,10 @@ const tscBin = path.join(projectRoot, 'node_modules', 'typescript', 'bin', 'tsc'
 
 export { viewablePath } from './mutation-run.mjs';
 
+const PLAIN = { NO_COLOR: '1', FORCE_COLOR: '0' };
+
 function typeErrors() {
-  const { output, status } = node([tscBin, '--noEmit']);
+  const { output, status } = node([tscBin, '--noEmit'], PLAIN);
 
   return status === 0 ? null : output;
 }
@@ -36,16 +34,19 @@ function testArguments(scope) {
 }
 
 function runTests(scope) {
-  const { output, status } = node([...testArguments(scope), '--passWithNoTests'], {
-    NO_COLOR: '1',
-    FORCE_COLOR: '0',
-  });
+  const { output, status } = node([...testArguments(scope), '--passWithNoTests'], PLAIN);
 
-  return status === 0 ? null : output;
+  return {
+    failed: status === 0 ? null : output,
+    ranNothing: output.includes('No test files found'),
+  };
 }
 
 function nothingMutated(scope) {
-  const ran = `${scope.tests.length} test file${scope.tests.length === 1 ? '' : 's'} related to this change ran green`;
+  const ran =
+    scope.gone.length > 0
+      ? 'the whole product suite ran green, because this change deleted a source file'
+      : `${scope.tests.length} test file${scope.tests.length === 1 ? '' : 's'} related to this change ran green`;
 
   return `${ran}; no source under src/ changed, so no mutants were made.`;
 }
@@ -55,9 +56,15 @@ function beforeMutation(scope) {
 
   if (types !== null) return failing([brokenTypes(types)]);
 
-  const red = runTests(scope);
+  const tests = runTests(scope);
 
-  return red === null ? null : failing([brokenBehavior(red)]);
+  if (tests.failed !== null) return failing([brokenBehavior(tests.failed)]);
+  // Stryker cannot mutate what no test imports; it errors instead of reporting.
+  if (tests.ranNothing && scope.mutated.length > 0) {
+    return failing(scope.mutated.map(untestedSource));
+  }
+
+  return null;
 }
 
 function afterMutation(outcome) {

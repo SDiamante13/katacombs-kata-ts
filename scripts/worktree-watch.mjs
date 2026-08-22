@@ -25,8 +25,12 @@ function snapshotPath(session) {
 }
 
 function remember(session, taken) {
-  mkdirSync(ledgerRoot, { recursive: true });
-  writeFileSync(snapshotPath(session), JSON.stringify(taken));
+  try {
+    mkdirSync(ledgerRoot, { recursive: true });
+    writeFileSync(snapshotPath(session), JSON.stringify(taken));
+  } catch {
+    // A snapshot that cannot be written must not take the agent's turn down.
+  }
 }
 
 export function baseline(session) {

@@ -39,10 +39,17 @@ Two exclusions, both stated here rather than left to be discovered:
   file will not, by itself, wake this tier — the mutation scope follows changed _source_. Closing it
   needs the module graph, which costs more than it is worth at this size. The commit gate runs
   `npm run check`, and that runs the sensor over everything the commit touches.
-- **A `.mjs` file under `src/` is mutated but not typechecked**, because `tsc` has nothing to say
-  about it. The type stage is a whole-program check, not a per-file one, so it also fails on errors
-  elsewhere in the project — that is deliberate; a program that does not compile is not a program
-  whose tests mean anything.
+- **A `.mjs` file under `src/` is mutated, and the type stage says nothing about its own contents**
+  — `tsc` does not check it, though it does check any `.ts` file that imports it. The type stage is
+  a whole-program check rather than a per-file one, so it also fails on errors elsewhere in the
+  project. That part is deliberate: a program that does not compile is not a program whose tests
+  mean anything.
+
+- **`SKIP` exits 0, the same as a pass.** Deliberate, and the reason is the commit gate: `npm run
+check` runs this sensor, and most commits change no source under `src/`. An exit code that
+  distinguished "nothing to check" from "checked and clean" would fail every documentation commit
+  in the repository. The distinction is carried in the output instead, where a reader and an agent
+  both see it, and the Stop hook forwards it as a `systemMessage`.
 
 And one thing that is checked but not verified end to end: the non-blocking `systemMessage` path is
 confirmed to render in Claude Code and **unverified in Codex CLI**. That is why the same findings

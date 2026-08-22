@@ -8,8 +8,19 @@ const MUTATED_ROOT = 'src';
 const SOURCE = /\.(ts|mjs|js)$/;
 const TEST = /\.test\.(ts|mjs|js)$/;
 
+// Both sides of the comparison must be realpaths or a symlinked ancestor drops the file.
+function realOf(file) {
+  const resolved = path.resolve(projectRoot, file);
+
+  try {
+    return realpathSync(resolved);
+  } catch {
+    return resolved;
+  }
+}
+
 function relativeTo(file) {
-  const inside = path.relative(projectRoot, path.resolve(projectRoot, file));
+  const inside = path.relative(projectRoot, realOf(file));
 
   if (inside === '' || inside.startsWith('..')) return null;
 

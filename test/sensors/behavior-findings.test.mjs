@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   behaviorFindings,
   behaviorReport,
-  brokenBehavior,
   summarise,
 } from '../../scripts/behavior-findings.mjs';
+import { brokenBehavior } from '../../scripts/stage-findings.mjs';
 
 function mutantFor(status, line, mutatorName = 'ConditionalExpression') {
   return {
@@ -92,6 +92,28 @@ describe('the accounting a pass carries', () => {
 
   it('says how many files it looked at', () => {
     expect(summarise(report)).toContain('1 file · 4 mutants');
+  });
+});
+
+describe('a mutant a comment told the runner to skip', () => {
+  const report = {
+    files: {
+      'src/cave.ts': { mutants: [mutantFor('Ignored', 7), mutantFor('Ignored', 7)] },
+    },
+  };
+
+  it('is a finding, not a quiet line in the accounting', () => {
+    const [finding] = behaviorFindings(report);
+
+    expect(finding).toMatchObject({
+      rule: 'mutation-suppressed',
+      where: 'src/cave.ts:7',
+    });
+  });
+
+  it('fails the run rather than passing it silently', () => {
+    expect(behaviorFindings(report)).toHaveLength(1);
+    expect(behaviorReport(behaviorFindings(report))).toContain('FAIL');
   });
 });
 

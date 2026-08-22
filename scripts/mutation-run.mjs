@@ -22,9 +22,11 @@ const strykerBin = path.join(
 );
 
 const mutationRoot = path.join(projectRoot, 'reports', 'mutation');
+const strykerRoot = path.join(projectRoot, '.stryker-tmp');
 const runRoot = path.join(mutationRoot, String(process.pid));
 
 export const viewablePath = path.join(mutationRoot, 'mutation.html');
+const stampPath = path.join(mutationRoot, 'mutation.stamp.json');
 
 // A fixed report path is how two concurrent runs read each other's answer.
 function runConfig(files) {
@@ -57,27 +59,44 @@ function alive(pid) {
   }
 }
 
-// A killed run leaves its directory behind, and nothing else would remove it.
-function sweepStaleRuns() {
-  if (!existsSync(mutationRoot)) return;
+function reapDeadPids(root) {
+  if (!existsSync(root)) return;
 
-  readdirSync(mutationRoot)
+  readdirSync(root)
     .filter((entry) => /^\d+$/.test(entry) && !alive(Number(entry)))
-    .forEach((entry) =>
-      rmSync(path.join(mutationRoot, entry), { recursive: true, force: true }),
-    );
+    .forEach((entry) => rmSync(path.join(root, entry), { recursive: true, force: true }));
 }
 
-function publishReport() {
+// A killed run leaves both its directories behind; nothing else would remove them.
+function sweepStaleRuns() {
+  reapDeadPids(mutationRoot);
+  reapDeadPids(strykerRoot);
+}
+
+function publishReport(files, at) {
   const produced = path.join(runRoot, 'mutation.html');
 
   if (existsSync(produced)) renameSync(produced, viewablePath);
+  writeFileSync(stampPath, JSON.stringify({ at, files, current: true }));
   rmSync(runRoot, { recursive: true, force: true });
 }
 
-export function runMutation(files) {
+// A run that stops before mutation leaves a report about a different change.
+export function markReportStale() {
+  if (!existsSync(stampPath)) return;
+
+  const stamp = JSON.parse(readFileSync(stampPath, 'utf8'));
+
+  writeFileSync(stampPath, JSON.stringify({ ...stamp, current: false }));
+}
+
+export function reportStamp() {
+  return existsSync(stampPath) ? JSON.parse(readFileSync(stampPath, 'utf8')) : null;
+}
+
+export function runMutation(files, run = node) {
   sweepStaleRuns();
-  const { output } = node([strykerBin, 'run', writeRunConfig(files)]);
+  const { output } = run([strykerBin, 'run', writeRunConfig(files)]);
   const produced = path.join(runRoot, 'mutation.json');
 
   if (!existsSync(produced)) {
@@ -87,7 +106,7 @@ export function runMutation(files) {
   }
 
   const report = JSON.parse(readFileSync(produced, 'utf8'));
-  publishReport();
+  publishReport(files, new Date().toISOString());
 
   return { report };
 }

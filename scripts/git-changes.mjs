@@ -3,16 +3,30 @@ import path from 'node:path';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 
-// --untracked-files=all: a file the change created is a changed file.
-export function dirtyPaths() {
-  const seen = spawnSync('git', ['status', '--porcelain', '--untracked-files=all'], {
-    cwd: projectRoot,
-    encoding: 'utf8',
-  });
+const RENAMED = /[RC]/;
 
-  return (seen.stdout ?? '')
-    .split('\n')
-    .filter(Boolean)
-    .map((line) => line.slice(3).trim())
-    .map((entry) => entry.split(' -> ').at(-1));
+// -z, because git quotes and escapes any path with a space in the human format.
+function records() {
+  const seen = spawnSync(
+    'git',
+    ['status', '--porcelain', '--untracked-files=all', '-z'],
+    { cwd: projectRoot, encoding: 'utf8' },
+  );
+
+  return (seen.stdout ?? '').split('\0').filter(Boolean);
+}
+
+export function dirtyPaths() {
+  const entries = records();
+  const paths = [];
+
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index];
+
+    paths.push(entry.slice(3));
+    // A rename spends a second record on the path it came from.
+    if (RENAMED.test(entry.slice(0, 2))) index += 1;
+  }
+
+  return paths;
 }

@@ -107,10 +107,18 @@ export function agentTierRan(states, files, now = Date.now()) {
   return { ok: true, reason: `last fired ${Math.round((now - latest) / 1000)}s ago` };
 }
 
+// SENSORS=git hands the sensors to a hook that may not be installed.
+function commitGate() {
+  const installed = existsSync(path.join(projectRoot, '.husky', 'pre-commit'));
+
+  return `  Commit gate\n    .husky/pre-commit  ${mark(installed)}`;
+}
+
 function reportOn(states) {
   const broken = states.filter((state) => !state.wired || !state.installed);
+  const body = [...states.map(describe), commitGate()].join('\n\n');
 
-  process.stdout.write(`SENSORS DOCTOR\n\n${states.map(describe).join('\n\n')}\n\n`);
+  process.stdout.write(`SENSORS DOCTOR\n\n${body}\n\n`);
   process.exitCode = broken.length === 0 ? 0 : 1;
 }
 

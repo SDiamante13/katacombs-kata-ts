@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { scopeOf } from '../../scripts/behavior-scope.mjs';
 import { examine, requestedScope } from '../../scripts/behavior-sensor.mjs';
+import { reportStamp } from '../../scripts/mutation-run.mjs';
 
 const source = 'src/behavior-probe.ts';
 const spec = 'test/behavior-probe.test.ts';
@@ -142,4 +143,27 @@ describe('the scope it works out for itself', () => {
   it('prefers what the caller named over anything it could work out', () => {
     expect(requestedScope(['src/named.ts'], undefined)).toEqual(['src/named.ts']);
   });
+});
+
+describe('a source file no test has heard of', () => {
+  afterEach(uproot);
+
+  it('is a finding of its own, not a sensor that could not run', () => {
+    mkdirSync(path.dirname(path.resolve(source)), { recursive: true });
+    writeFileSync(path.resolve(source), CAVE);
+
+    const verdict = examine([source]);
+
+    expect(verdict.outcome).toBe('fail');
+    expect(verdict.report).toContain('untested-source');
+    expect(verdict.report).not.toContain('UNAVAILABLE');
+  }, 120_000);
+
+  it("does not leave the last run's report looking current", () => {
+    mkdirSync(path.dirname(path.resolve(source)), { recursive: true });
+    writeFileSync(path.resolve(source), CAVE);
+    examine([source]);
+
+    expect(reportStamp()?.current ?? false).toBe(false);
+  }, 120_000);
 });

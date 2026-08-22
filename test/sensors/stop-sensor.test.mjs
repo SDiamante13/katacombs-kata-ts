@@ -51,14 +51,32 @@ const failing = {
 };
 
 describe('what the Stop hook answers', () => {
-  it('lets a clean turn end', () => {
-    expect(stopResponse({ passed: true, report: '' }, true)).toEqual({ continue: true });
+  it('lets a clean turn end, carrying what it checked', () => {
+    const clean = {
+      passed: true,
+      report: 'SENSOR behavior: PASS (0 findings)\n  3 files',
+    };
+    const answer = stopResponse(clean, true);
+
+    expect(answer.continue).toBe(true);
+    expect(answer.systemMessage).toContain('3 files');
+  });
+
+  it('keeps the header and the rule when the findings are long', () => {
+    const long = {
+      passed: false,
+      report: `SENSOR behavior: FAIL (1 finding)\nsrc/a.ts:2:7 ERROR mutant-survived\n${'x'.repeat(9000)}`,
+    };
+
+    expect(stopResponse(long, true).reason).toContain('mutant-survived');
+    expect(stopResponse(long, true).reason).toContain('truncated');
   });
 
   it('lets a turn end when the tier had nothing to look at', () => {
-    const nothing = { passed: true, outcome: 'skip', report: 'SKIP' };
+    const nothing = { passed: true, outcome: 'skip', report: 'SKIP (nothing in scope)' };
 
-    expect(stopResponse(nothing, true)).toEqual({ continue: true });
+    expect(stopResponse(nothing, true).continue).toBe(true);
+    expect(stopResponse(nothing, true).systemMessage).toContain('nothing in scope');
     expect(stopResponse(null, true)).toEqual({ continue: true });
   });
 
@@ -121,6 +139,21 @@ describe('the Stop hook against a real turn', () => {
 
     expect(answer.decision).toBe('block');
     expect(answer.reason).toContain('mutant-survived');
+  }, 120_000);
+
+  it('holds the expensive tier back while the cheap one still has findings', () => {
+    writeFileSync(path.resolve(source), `${CAVE}\nconst unused = 1;\n`);
+    writeFileSync(path.resolve(spec), WEAK);
+    record(session, [source]);
+
+    const { out } = fireHook('scripts/stop-sensor.mjs', {
+      session_id: session,
+      stop_hook_active: false,
+    });
+    const answer = JSON.parse(out);
+
+    expect(answer.reason).toContain('cheap-tier-first');
+    expect(answer.reason).not.toContain('mutant-survived');
   }, 120_000);
 
   it('says nothing at all when the git tier owns the sensors', () => {

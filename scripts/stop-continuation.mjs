@@ -34,8 +34,12 @@ export function shouldPushBack(session, findings) {
 
   if (seen.includes(mark) || seen.length >= MOST_PUSHBACKS) return false;
 
-  mkdirSync(ledgerRoot, { recursive: true });
-  writeFileSync(markerPath(session), JSON.stringify([...seen, mark]));
+  try {
+    mkdirSync(ledgerRoot, { recursive: true });
+    writeFileSync(markerPath(session), JSON.stringify([...seen, mark]));
+  } catch {
+    // An unwritable marker must not take the agent's turn down with it.
+  }
 
   return true;
 }

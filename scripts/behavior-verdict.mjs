@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 
 import { behaviorReport, summarise, unavailableReport } from './behavior-findings.mjs';
-import { viewablePath } from './mutation-run.mjs';
+import { markReportStale, viewablePath } from './mutation-run.mjs';
 import { sensorReport } from './sensor-report.mjs';
 
 const SKIP_REPORT = [
@@ -25,6 +25,8 @@ function accounting(report) {
 }
 
 export function skipped() {
+  markReportStale();
+
   return { outcome: 'skip', passed: true, findings: [], report: SKIP_REPORT };
 }
 
@@ -40,6 +42,8 @@ export function passing(report, note = null) {
 }
 
 export function failing(findings, report = null) {
+  if (report === null) markReportStale();
+
   return {
     outcome: 'fail',
     passed: false,
@@ -49,6 +53,8 @@ export function failing(findings, report = null) {
 }
 
 export function unavailable(findings) {
+  markReportStale();
+
   return {
     outcome: 'unavailable',
     passed: false,
