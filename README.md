@@ -93,7 +93,7 @@ usually shorter than the argument about whether you need it.
 npm install
 npm run check     # typecheck, secrets, tests, structure, duplication, docs, mutants — what the hooks run
 npm test          # the tests on their own
-npm run behavior:report   # the last mutation run, in a browser
+npm run behavior:report   # the last mutation run, in a browser, labelled with what it covers
 ```
 
 `npm run check` runs every sensor. One of them, `gitleaks`, is a binary rather than a package —

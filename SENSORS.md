@@ -176,7 +176,7 @@ A sensor you cannot copy is not a sensor you can adopt.
 
 ```sh
 npm run behavior:sensor   # types, then the tests, then the mutants they miss — coached
-npm run behavior:report   # opens the last run's HTML report
+npm run behavior:report   # opens the last mutation report, and says what it covers
 ```
 
 Coverage is the gameable metric. A suite can execute every line in a file, assert almost nothing,
@@ -314,6 +314,18 @@ A Stop hook that blocks whenever it has something to say is a loop. Three guards
 Past those, the sensor still reports — it just stops standing in the doorway. The findings go out on
 `systemMessage` _and_ on stderr, because only one of those is verified to reach the agent in each
 runtime.
+
+### The report is not always about your change
+
+`npm run behavior:report` opens the last report a **mutation run** produced. A turn that ends before
+mutating — a red suite, a change with no source in it, a scope the tier refused — writes no report,
+so the file on disk still answers an older change. The sensor knows this: it stamps each published
+report with the time and the files it covers, marks the stamp stale when a later run stops early,
+and the command leads with that warning rather than burying it.
+
+The alternative was deleting the report whenever a run stopped early. Keeping it and labelling it is
+more useful and just as honest — what is not honest is a command that opens a stale answer and says
+nothing.
 
 ### Suppression
 

@@ -72,6 +72,15 @@ The ledger stays session-scoped rather than being replaced by the worktree outri
 sessions can share one checkout, and one session's Stop hook has no business mutating the other's
 work in progress.
 
+## A killed sensor does not kill its mutation run
+
+Stryker is spawned as an ordinary child process, so `SIGKILL` on the sensor leaves it orphaned: it
+runs to completion, writes into its own per-pid directory, and is reaped by the next run's sweep.
+This is not fixed, and it is worth being explicit about why. `SIGKILL` cannot be trapped, so the
+only defence is a process group the killer chooses to signal — which is the caller's decision, not
+ours. What the sensor can control it does: the work is per-pid, so an orphan cannot corrupt a later
+run's answer, and the sweep means it cannot accumulate either.
+
 ## No incremental mode
 
 Stryker can cache a previous run and only re-test what changed. It is switched off. A scoped run
