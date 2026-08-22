@@ -26,6 +26,8 @@ const maintainabilityRules = {
 
 const commentRules = {
   'sensors/no-commented-out-code': 'error',
+  'sensors/one-line-comment': 'error',
+  'sensors/no-stale-reference': 'error',
   'no-warning-comments': [
     'error',
     { terms: ['todo', 'fixme', 'xxx', 'hack'], location: 'anywhere' },

@@ -27,6 +27,8 @@ export const kernels = {
   'leaked-secret': 'rotate it first, then remove it',
   'stale-doc': 'fix the doc or build the thing',
   'commented-out-code': 'delete it, git remembers',
+  'long-comment': 'name it in code, or link the doc',
+  'stale-comment': 'the code moved, the comment did not',
   'deferred-work': 'do it, or track it properly',
   'long-file': 'decide which kind of big it is',
   'high-complexity': 'name the conditions first',
@@ -50,6 +52,8 @@ export const kernels = {
 const guideByRule = {
   'max-lines-per-function': 'long-function',
   'sensors/no-commented-out-code': 'commented-out-code',
+  'sensors/one-line-comment': 'long-comment',
+  'sensors/no-stale-reference': 'stale-comment',
   'sensors/no-mocking-library': 'mocking-library',
   'no-restricted-imports': 'boundary-violation',
   'no-restricted-globals': 'impure-domain',

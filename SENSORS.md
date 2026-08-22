@@ -12,11 +12,12 @@ How each sensor is wired, and which files to copy into your own project.
 | `eslint.config.mjs`                   | structural + design | thresholds and type safety; boundary and purity pending   | live    |
 | `scripts/sensor-guides.mjs`           | structural + design | maps a rule id to its guide, with a fallback for the rest | live    |
 | `scripts/guides/`                     | structural + design | the guide text, one file per tier                         | live    |
-| `scripts/eslint-rules/`               | structural          | commented-out-code detection — a rule you write yourself  | live    |
+| `scripts/eslint-rules/`               | structural          | four rules you write yourself, three of them about prose  | live    |
 | `scripts/sensor-report.mjs`           | all                 | the one `SENSOR x: PASS/FAIL` line every sensor prints    | live    |
 | `scripts/eslint-sensor-formatter.mjs` | structural + design | turns a rule id into a coaching guide                     | live    |
 | `.prettierrc.json`                    | none                | formatting, auto-fixed and never reported                 | live    |
 | `.jscpd.json`                         | structural          | duplication across files                                  | live    |
+| `context/comments.md`                 | structural          | what a comment may be, and which half a sensor can check  | live    |
 | `scripts/jscpd-sensor.mjs`            | structural          | duplication findings, in the same coached format          | live    |
 | `stryker.config.mjs`                  | behavioral          | mutation testing, scoped to changed files                 | pending |
 | `scripts/edit-sensors.mjs`            | trigger             | runs the cheap tier over the files an edit just touched   | live    |
@@ -374,6 +375,42 @@ test/probe.mjs:1:8 ERROR max-params
 
 The roll call names the sensors that passed as well as the one that failed, so the agent learns
 what is watching rather than only what it broke.
+
+### The comment sensors
+
+Comments are the only artifact here that can be wrong for a year without anything noticing. Nothing
+compiles them, no test asserts them, and readers trust prose more than code — so a wrong comment
+does more damage than no comment.
+
+Two of the ways they go wrong are mechanical:
+
+```sh
+sensors/one-line-comment    a comment block longer than one line
+sensors/no-stale-reference  a backticked name or path that no longer resolves
+```
+
+The first says: if the why fits in a line, keep it in the code; if it does not, it is a document,
+and a document kept in a comment cannot be linked to and will not be maintained. Write it in
+`context/` and leave a one-line comment pointing at the page. Splitting the paragraph into
+consecutive one-liners does not work — the rule counts the run, not the line.
+
+The second is the drift detector, and it is the reason to write code names in backticks:
+
+```js
+// `readHookPayload` parses it     <- checked against this file's identifiers
+// see `context/comments.md`       <- checked against the filesystem
+// the door is `never` open        <- prose, ignored
+// run `npm run check` first       <- prose, ignored
+```
+
+A comment naming a function that has since been renamed is worse than unhelpful. It teaches the
+reader that comments in this repository cannot be trusted, which costs you every other comment too.
+
+**Neither rule can tell a why from a what.** That is judgment and it stays with the design sensor.
+What these two buy is that the judgment gets spent on comments that are at least short and at least
+true — and the coaching guides spend most of their words on the question the sensors cannot ask:
+_can the code say this instead?_ Nine times in ten it can, and the comment was a name nobody wrote.
+Full policy in [`context/comments.md`](context/comments.md).
 
 ### Why the documentation sensor is not in that list
 
