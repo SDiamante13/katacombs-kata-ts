@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { lastSeen } from './sensor-liveness.mjs';
 
@@ -106,29 +107,37 @@ export function agentTierRan(states, files, now = Date.now()) {
   return { ok: true, reason: `last fired ${Math.round((now - latest) / 1000)}s ago` };
 }
 
-const states = runtimes.map(examine);
-
-if (process.argv.includes('--assert')) {
-  const verdict = agentTierRan(states, stagedFiles());
-
-  if (!verdict.ok) {
-    process.stderr.write(
-      [
-        `SENSORS DOCTOR: ${verdict.reason}.`,
-        '',
-        '  SENSORS=agent tells the commit gate that the cheap sensors already ran',
-        '  inside the agent loop. There is no evidence they did.',
-        '',
-        '  Run `npm run sensors:doctor` to see which runtime is wired, or unset',
-        '  SENSORS so the commit gate runs them itself.',
-        '',
-      ].join('\n'),
-    );
-    process.exitCode = 1;
-  }
-} else {
+function reportOn(states) {
   const broken = states.filter((state) => !state.wired || !state.installed);
 
   process.stdout.write(`SENSORS DOCTOR\n\n${states.map(describe).join('\n\n')}\n\n`);
   process.exitCode = broken.length === 0 ? 0 : 1;
+}
+
+const REFUSAL = [
+  '',
+  '  SENSORS=agent tells the commit gate that the cheap sensors already ran',
+  '  inside the agent loop. There is no evidence they did.',
+  '',
+  '  Run `npm run sensors:doctor` to see which runtime is wired, or unset',
+  '  SENSORS so the commit gate runs them itself.',
+  '',
+].join('\n');
+
+function assertOn(states) {
+  const verdict = agentTierRan(states, stagedFiles());
+
+  if (verdict.ok) return;
+
+  process.stderr.write(`SENSORS DOCTOR: ${verdict.reason}.\n${REFUSAL}`);
+  process.exitCode = 1;
+}
+
+// Importing this module must not run it. The tests import agentTierRan, and a
+// module that reports on import is a module that reports from inside a test.
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const states = runtimes.map(examine);
+
+  if (process.argv.includes('--assert')) assertOn(states);
+  else reportOn(states);
 }
