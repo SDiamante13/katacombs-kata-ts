@@ -397,6 +397,35 @@ and a sensor that can be broken by editing a file it is not watching will miss t
 documentation sensor runs at the commit boundary over every tracked document, which is what finally
 catches the rename. Full reasoning in [`context/sensor-triggers.md`](context/sensor-triggers.md).
 
+### One rule the per-edit tier does not enforce
+
+Red-green requires passing through a state where the signature exists and the body does not use it
+yet:
+
+```ts
+export function toRoman(value: number): string {
+  return '';
+}
+```
+
+That is the hardcode-first stub, and at that instant it is correct — the parameter is unused because
+the implementation is deliberately minimal, and it stops being unused one edit later at green. A
+sensor that reports it tells the agent to rename to `_value` and then rename back. Churn the sensor
+induced.
+
+So `@typescript-eslint/no-unused-vars` runs with `args: 'none'` in the per-edit tier and `args:
+'all'` at the commit gate. An unused _local_ is never a legal intermediate and is reported in both.
+
+**A per-edit sensor must be true of every state the method it enforces requires you to pass
+through.** That is a different axis from cost and from what a sensor compares against — two good
+rules can disagree at a boundary, and the trigger is where you settle it rather than by weakening
+either one.
+
+The override lives in `eslint.edit.config.mjs`, which is the whole of `eslint.config.mjs` plus that
+one line. It is a separate file rather than a `--rule` flag because the flag applies to every file
+and fails on the ones the TypeScript plugin does not cover; and it imports the base config, so it
+cannot drift on anything else.
+
 ### Running both tiers without running everything twice
 
 The agent hook and the pre-commit hook overlap: both run the cheap sensors. That redundancy is

@@ -60,6 +60,8 @@ const sensors = [
         eslintBin,
         ...targets,
         '--no-warn-ignored',
+        '--config',
+        './eslint.edit.config.mjs',
         '--format',
         './scripts/eslint-sensor-formatter.mjs',
       ]),

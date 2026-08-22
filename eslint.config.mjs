@@ -10,6 +10,7 @@ import {
   nondeterminism,
 } from './scripts/eslint-rules/design-sensors.mjs';
 import { sensorRules } from './scripts/eslint-rules/index.mjs';
+import { unusedVars } from './scripts/eslint-rules/unused-vars.mjs';
 
 const maintainabilityRules = {
   'max-lines-per-function': [
@@ -39,16 +40,7 @@ const typeSafetyRules = {
   '@typescript-eslint/no-unsafe-return': 'error',
   '@typescript-eslint/no-unsafe-call': 'error',
   '@typescript-eslint/no-unsafe-member-access': 'error',
-  '@typescript-eslint/no-unused-vars': [
-    'error',
-    {
-      args: 'all',
-      argsIgnorePattern: '^_',
-      varsIgnorePattern: '^_',
-      caughtErrorsIgnorePattern: '^_',
-      ignoreRestSiblings: false,
-    },
-  ],
+  '@typescript-eslint/no-unused-vars': unusedVars,
 };
 
 const specSuiteRules = {
