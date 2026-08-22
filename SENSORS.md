@@ -252,35 +252,45 @@ usually the more urgent of the two.
 
 ### What it costs
 
-Median of three runs each, on an idle ten-core machine:
+Measured on an otherwise idle ten-core machine, in this repository, against the code as it ships.
+Five samples for the cheap rows, three for the expensive ones; the spread was within 10% on every
+row.
 
-| Change                                        | Mutants | Wall clock |
-| --------------------------------------------- | ------- | ---------- |
-| Nothing it watches changed                    | —       | **0.06s**  |
-| Related tests are red (stops at stage 2)      | —       | **1.2s**   |
-| One small file, well covered                  | 10      | **6.0s**   |
-| Three files, well covered                     | 30      | **7.5s**   |
-| Ten small files, well covered                 | 140     | **6.7s**   |
-| One file, almost nothing covered              | 442     | **7.9s**   |
-| Ten files, five functions each, fully covered | 700     | **33s**    |
+| Change                                   | Mutants | Median | Range      |
+| ---------------------------------------- | ------- | ------ | ---------- |
+| Nothing it watches changed               | —       | 0.0s   | 0.0–0.0s   |
+| Past the 25-file bound: refused          | —       | 0.1s   | 0.1–0.1s   |
+| Related tests are red — stops at stage 2 | —       | 0.8s   | 0.7–1.1s   |
+| One function, covered                    | 14      | 2.8s   | 2.7–3.0s   |
+| Five functions, covered                  | 70      | 4.2s   | 4.1–4.6s   |
+| Twenty functions, barely covered         | 280     | 5.9s   | 5.6–6.0s   |
+| Twenty functions, covered                | 280     | 11.8s  | 11.0–11.9s |
+| Ten files, five functions each, covered  | 700     | 24.8s  | 22.7–26.2s |
 
-The model, and it is worth stating precisely because the obvious guess is wrong: about four seconds
-is fixed, and **the rest scales with the mutants your tests actually cover** — very roughly
-0.03–0.09 seconds each, shared across cores and sensitive to what else the machine is doing.
-Uncovered mutants are nearly free, which is why the 442-mutant row costs less than the 30-mutant
-one. A well-covered change is the expensive kind, which is the right way round: the tier costs most
-where it has most to say.
+The model those rows fit, and it is worth stating because the obvious guess is wrong:
 
-Note what this does **not** say. `complexity: 5` caps how many mutants a single _function_ can have;
-it says nothing about how many functions a change touches. The structural tier bounds the worst case
-per unit, not per turn. So this tier bounds itself, twice:
+> **about two seconds fixed, plus about 0.03 seconds per mutant your tests actually cover.**
 
-- more than 25 changed source files, and it refuses before starting;
+Every row is within a few percent of that. Uncovered mutants are close to free — the two 280-mutant
+rows differ by a factor of two on coverage alone — so **a well-covered change is the expensive kind**,
+which is the right way round: the tier costs most where it has most to say.
+
+Two things this does not say. The fixed two seconds is your project's typecheck and test startup,
+not the sensor; a larger project pays more of it. And every number here is from an idle machine.
+During this repository's own battle testing — eight agents running the same tooling at once, load
+average above 40 — the 700-mutant case took between 25 and 67 seconds. **That variance is the reason
+the bounds below exist, not a footnote to them.**
+
+`complexity: 5` caps how many mutants a single _function_ can have and says nothing about how many
+functions a change touches, so the structural tier does not bound this one's cost per turn. This
+tier bounds itself, twice:
+
+- more than 25 changed source files, and it refuses before starting — 0.1s, the row above;
 - more than 90 seconds mutating, and it stops and says so.
 
-Both come back as `scope-too-large`, pointing at `npm run check` — the commit gate has time this
-tier does not. Raising either number is a decision about how long a pause you will tolerate, not a
-detail.
+Both come back as `scope-too-large`, pointing at `npm run check`, which has time this tier does not.
+Those two numbers encode how long a pause you are willing to take, and they are the first thing to
+reconsider if you copy this.
 
 The hung-test case has its own bound: the test stage is killed at 120 seconds, and the product's own
 suite sets `testTimeout` to 10 seconds in `vitest.mutation.config.ts` so one stuck test fails rather

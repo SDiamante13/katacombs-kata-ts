@@ -116,6 +116,63 @@ some of them would be stale. Speed we already have is not worth an answer we wou
 
 ## What it actually costs
 
+Measured, not estimated — five samples for the cheap cases and three for the expensive ones, on an
+idle ten-core machine, against the code as it ships:
+
+| Change                               | Mutants | Median |
+| ------------------------------------ | ------- | ------ |
+| Nothing in scope                     | —       | 0.0s   |
+| Refused at the 25-file bound         | —       | 0.1s   |
+| Red suite, stops at stage 2          | —       | 0.8s   |
+| One function, covered                | 14      | 2.8s   |
+| Five functions, covered              | 70      | 4.2s   |
+| Twenty functions, barely covered     | 280     | 5.9s   |
+| Twenty functions, covered            | 280     | 11.8s  |
+| Ten files of five functions, covered | 700     | 24.8s  |
+
+Every row fits **about two seconds fixed plus about 0.03 seconds per covered mutant**, to within a
+few percent. The fixed part is the project's own typecheck and test startup rather than anything the
+sensor does, so a larger project pays more of it.
+
+Two earlier versions of this page got the cost wrong in opposite directions, which is worth
+recording. The first claimed `complexity: 5` bounded the cost; it bounds mutants per _function_, and
+a battle-test agent measured that false. The second was measured on a machine that was not idle and
+published figures roughly half again too high. The numbers above were taken with the machine quiet
+and with enough samples to show the spread — and on a loaded machine, during this repository's own
+battle testing, the 700-mutant case ran between 25 and 67 seconds. **Cost claims about a sensor are
+themselves a thing to measure repeatedly, because being wrong in either direction gets the sensor
+switched off** — too slow and it is a nuisance, too optimistic and the first person to time it stops
+believing the rest of the page.
+
+## The evasion this tier cannot close
+
+Mutation testing measures the tests against the code that is there. It has nothing to say about code
+that is no longer there. So an agent that deletes the branch a surviving mutant landed on gets a
+clean PASS, and **the sensor cannot tell that from a legitimate removal of dead code** — because at
+the level it operates, there is no difference.
+
+Three things narrow it, and none of them close it:
+
+- The accounting line makes the collapse visible. A file that had thirty mutants last turn and has
+  four this turn is saying something, to a reader.
+- `no-void` and `no-unused-expressions` close the cheap version, where a parameter is kept alive by
+  a statement that computes nothing.
+- The other sensors still see the deletion: it is a diff, and the design sensor reviews diffs.
+
+What would actually close it is a check outside this tier — comparing a file's mutant count against
+its last recorded one, and treating a large unexplained drop as a finding. That is a different
+sensor with a different trigger, and it is not built. **A known hole named in the documentation is a
+different thing from a known hole nobody wrote down.**
+
+## No incremental mode
+
+Stryker can cache a previous run and only re-test what changed. It is switched off. A scoped run
+takes about five seconds from cold, and an incremental report merges results for files outside the
+current scope — so the sensor would report findings about code this change never touched, and
+some of them would be stale. Speed we already have is not worth an answer we would have to qualify.
+
+## What it actually costs
+
 Measured as the median of three runs on an idle ten-core machine, not estimated: 0.06s when nothing
 it watches changed, 1.2s stopping at a red suite, 6.0s for one well-covered file, 7.5s for three,
 6.7s for ten small ones, 7.9s for a file with 442 mutants of which 429 are uncovered — and **33s for
