@@ -21,12 +21,21 @@ function refuse(problems) {
   process.exitCode = 1;
 }
 
-function readReview(file) {
+// `-` is the whole point: the review never has to leave a scratch file behind.
+function sourceOf(target) {
+  return target === '-' ? 0 : target;
+}
+
+function readReview(target) {
   try {
-    return JSON.parse(readFileSync(file, 'utf8'));
+    return JSON.parse(readFileSync(sourceOf(target), 'utf8'));
   } catch (error) {
     return { unreadable: String(error?.message ?? error) };
   }
+}
+
+function named(target) {
+  return target === '-' ? 'the review on stdin' : target;
 }
 
 function record(file) {
@@ -34,7 +43,7 @@ function record(file) {
   const given = readReview(file);
 
   if (given.unreadable)
-    return refuse([`${file} is not readable JSON: ${given.unreadable}`]);
+    return refuse([`${named(file)} is not readable JSON: ${given.unreadable}`]);
 
   const problems = validate(given, request.source);
 
@@ -48,13 +57,17 @@ function record(file) {
   process.exitCode = review.findings.length === 0 ? 0 : 1;
 }
 
-const NEEDS_A_FILE =
-  'Usage: npm run design:review -- <findings.json>. Run `npm run design:scope` first.\n';
+const NEEDS_A_REVIEW = [
+  'Usage: npm run design:review -- -   (the review as JSON on stdin)',
+  '   or: npm run design:review -- <findings.json>',
+  'Run `npm run design:scope` first.',
+  '',
+].join('\n');
 
 export function review([target]) {
   if (target) return record(target);
 
-  process.stdout.write(NEEDS_A_FILE);
+  process.stdout.write(NEEDS_A_REVIEW);
   process.exitCode = 1;
 }
 

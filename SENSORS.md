@@ -31,12 +31,12 @@ How each sensor is wired, and which files to copy into your own project.
 | `.claude/hooks/`                      | trigger             | the Claude Code adapter; PreToolUse pending                | live    |
 | `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                              | live    |
 | `.codex/hooks/`                       | trigger             | the Codex adapter                                          | live    |
-| `context/design-charter.md`           | design              | the twelve questions the inferential reviewer may ask      | live    |
-| `scripts/design-charter.mjs`          | design              | the same twelve, where the recorder can enforce them       | live    |
+| `.claude/skills/design-sensor/`       | design              | the reviewer: the twelve questions and how to judge them   | live    |
+| `.codex/skills/design-sensor/`        | design              | the same file, for Codex CLI — no adapter needed           | live    |
+| `context/design-charter.md`           | design              | why the list is closed, and why each exclusion is one      | live    |
+| `scripts/design-charter.mjs`          | design              | the twelve ids, where the recorder can enforce them        | live    |
 | `scripts/design-gate.mjs`             | design              | the guards that decide whether the review is worth buying  | live    |
 | `scripts/design-review.mjs`           | design              | records a review, or refuses it and asks again             | live    |
-| `.claude/skills/design-sensor/`       | design              | the inferential reviewer, for Claude Code                  | live    |
-| `.codex/skills/design-sensor/`        | design              | the same file, for Codex CLI — no adapter needed           | live    |
 | `AGENTS.md`                           | contract            | what the agent is told, including sensor integrity         | pending |
 
 ## The structural sensor
@@ -466,8 +466,9 @@ the tests gate the mutants, and the mutants gate the only sensor that costs doll
 
 ### Twelve questions, and a closed list
 
-`context/design-charter.md` has them in full, in six groups: **placement**, **abstraction**,
-**naming**, **test design**, **comments**, **documentation**. Two of those groups are the reason
+The skill carries them in full, in six groups: **placement**, **abstraction**, **naming**,
+**test design**, **comments**, **documentation**. They live in the file the reviewer actually reads,
+not in a document it is told to go and open. Two of those groups are the reason
 the tier exists at all — a token matcher cannot see two functions solving one problem in different
 words, and a missing abstraction shows up as a diff that is wide rather than a file that is long.
 
@@ -476,8 +477,15 @@ scope. A finding about them is noise **even when it is right**, because it teach
 the cheap sensors are optional.
 
 The same twelve live in `scripts/design-charter.mjs`, because the recorder needs the ids. Two
-copies of anything drift, so a test reads the prose and asserts every question appears in the code
-word for word.
+copies of anything drift, so a test reads the skill and asserts every question appears in the code
+word for word — and asserts the argument page beside it lists none of them, which would be its own
+question 12.
+
+Before reporting anything, the reviewer applies four tests borrowed from a complexity-analysis
+skill: is the complexity **incidental** rather than essential to the domain, is it **conformity** to
+something external it cannot change, is it **change pressure** holding an extension point open, and
+**would a lint rule have decided it**. Most candidates die there. A charter without that filter is
+twelve prompts to find something, with no test for whether the something is worth reading.
 
 ### A review that is not recorded did not happen
 

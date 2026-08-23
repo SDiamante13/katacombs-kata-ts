@@ -1,4 +1,4 @@
-// Without a charter it becomes the slop it exists to prevent — context/design-charter.md.
+// The ids the recorder enforces; the reviewer reads the same twelve in the skill.
 export const charter = [
   {
     id: 1,

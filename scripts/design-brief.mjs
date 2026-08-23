@@ -21,8 +21,8 @@ export function brief(request) {
     'Prose changed this session — context for questions 10 to 12:',
     listed(request.prose, '(none)'),
     '',
-    'The twelve questions: context/design-charter.md',
-    'Record the review with: npm run design:review -- <findings.json>',
+    'The twelve questions, and how to judge a candidate: the design-sensor skill.',
+    'Record the review with: npm run design:review -- -   (JSON on stdin)',
     '',
   ].join('\n');
 }
