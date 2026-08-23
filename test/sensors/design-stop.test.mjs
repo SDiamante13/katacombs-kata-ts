@@ -1,4 +1,5 @@
-import { rmSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
+import path from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -117,4 +118,24 @@ describe('the Stop hook against a turn the cheaper tiers cannot fault', () => {
     expect(answer.reason).toContain('SENSOR design: DUE');
     expect(answer.reason).toContain(source);
   }, 120_000);
+});
+
+const BACKTICKED = /`([\w./-]+\.(?:md|mjs|json))`/g;
+
+// The block message is the only sensor output that tells the agent where to go.
+describe('every path the block message names', () => {
+  const reason = endOfTurn().reason;
+
+  afterEach(forget);
+
+  it.each([...reason.matchAll(BACKTICKED)].map(([, file]) => file))(
+    'exists: %s',
+    (file) => {
+      expect(existsSync(path.resolve(file))).toBe(true);
+    },
+  );
+
+  it('names at least one, so a reworded message cannot make this vacuous', () => {
+    expect([...reason.matchAll(BACKTICKED)].length).toBeGreaterThan(0);
+  });
 });
