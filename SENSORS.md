@@ -1,46 +1,49 @@
 # Sensors
 
-How each sensor is wired, and which files to copy into your own project.
+How each sensor is built, and why it is built that way.
 
-## What to copy
+## The files
 
-| File                                  | Sensor              | Does                                                                                           | Status |
-| ------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------- | ------ |
-| `eslint.config.mjs`                   | structural + design | thresholds, type safety, boundaries, purity — and no inline directive may switch any of it off | live   |
-| `eslint.edit.config.mjs`              | trigger             | the base config plus the relaxation red-green needs                                            | live   |
-| `scripts/sensor-guides.mjs`           | structural + design | maps a rule id to its guide, with a fallback for the rest                                      | live   |
-| `scripts/guides/`                     | structural + design | the guide text, one file per tier                                                              | live   |
-| `scripts/eslint-rules/`               | structural          | eleven rules you write yourself, three of them about prose                                     | live   |
-| `scripts/guides/tests.mjs`            | test design         | the guides for the six test-design rules                                                       | live   |
-| `context/wet-tests.md`                | test design         | why the test rules pull against the duplication sensor                                         | live   |
-| `scripts/sensor-report.mjs`           | all                 | the one `SENSOR x: PASS/FAIL` line every sensor prints                                         | live   |
-| `scripts/eslint-sensor-formatter.mjs` | structural + design | turns a rule id into a coaching guide                                                          | live   |
-| `.prettierrc.json`                    | none                | formatting, auto-fixed and never reported                                                      | live   |
-| `.jscpd.json`                         | structural          | duplication across files                                                                       | live   |
-| `context/comments.md`                 | structural          | what a comment may be, and which half a sensor can check                                       | live   |
-| `scripts/jscpd-sensor.mjs`            | structural          | duplication findings, in the same coached format                                               | live   |
-| `scripts/gitleaks-sensor.mjs`         | secrets             | credentials, redacted, with the allow-comment closed                                           | live   |
-| `scripts/docs-sensor.mjs`             | documentation       | the scripts and links the prose claims, against the repo                                       | live   |
-| `stryker.config.mjs`                  | behavioral          | mutation testing, scoped to changed files                                                      | live   |
-| `scripts/behavior-sensor.mjs`         | behavioral          | the escalation: types, then tests, then the mutants missed                                     | live   |
-| `scripts/edit-sensors.mjs`            | trigger             | runs the cheap tier over the files an edit just touched                                        | live   |
-| `scripts/stop-sensor.mjs`             | trigger             | the end-of-turn hook, shared by both runtimes unchanged                                        | live   |
-| `scripts/sensor-tier.mjs`             | trigger             | the `SENSORS` switch that decides which tier owns them                                         | live   |
-| `scripts/session-ledger.mjs`          | trigger             | the changed-path ledger the Stop hooks read                                                    | live   |
-| `scripts/worktree-watch.mjs`          | trigger             | catches a file a shell command wrote, which names no path                                      | live   |
-| `scripts/worktree-baseline.mjs`       | trigger             | SessionStart; the one hook both runtimes share unchanged                                       | live   |
-| `scripts/sensors-doctor.mjs`          | trigger             | whether the hooks are declared, and whether they ever ran                                      | live   |
-| `.husky/pre-commit`                   | trigger             | the commit gate, and where the tier above it is audited                                        | live   |
-| `.claude/settings.json`               | trigger             | SessionStart and PostToolUse wiring for Claude Code                                            | live   |
-| `.claude/hooks/`                      | trigger             | the Claude Code adapter; a PreToolUse deny is deferred                                         | live   |
-| `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                                                                  | live   |
-| `.codex/hooks/`                       | trigger             | the Codex adapter                                                                              | live   |
-| `.agents/skills/design-sensor/`       | design              | the reviewer: the twelve questions, one file both runtimes load                                | live   |
-| `context/design-charter.md`           | design              | why the list is closed, and why each exclusion is one                                          | live   |
-| `scripts/design-charter.mjs`          | design              | the twelve ids, where the recorder can enforce them                                            | live   |
-| `scripts/design-gate.mjs`             | design              | the guards that decide whether the review is worth buying                                      | live   |
-| `scripts/design-review.mjs`           | design              | records a review, or refuses it and asks again                                                 | live   |
-| `AGENTS.md`                           | contract            | what the agent is told: the ports, and sensor integrity with no numbers in it                  | live   |
+What each piece of the apparatus is. [INSTALL.md](INSTALL.md) has the order to copy them in,
+what to edit, and how to prove each one fired.
+
+| File                                  | Sensor              | Does                                                                                           |
+| ------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------- |
+| `eslint.config.mjs`                   | structural + design | thresholds, type safety, boundaries, purity — and no inline directive may switch any of it off |
+| `eslint.edit.config.mjs`              | trigger             | the base config plus the relaxation red-green needs                                            |
+| `scripts/sensor-guides.mjs`           | structural + design | maps a rule id to its guide, with a fallback for the rest                                      |
+| `scripts/guides/`                     | structural + design | the guide text, one file per tier                                                              |
+| `scripts/eslint-rules/`               | structural          | eleven rules you write yourself, three of them about prose                                     |
+| `scripts/guides/tests.mjs`            | test design         | the guides for the six test-design rules                                                       |
+| `context/wet-tests.md`                | test design         | why the test rules pull against the duplication sensor                                         |
+| `scripts/sensor-report.mjs`           | all                 | the one `SENSOR x: PASS/FAIL` line every sensor prints                                         |
+| `scripts/eslint-sensor-formatter.mjs` | structural + design | turns a rule id into a coaching guide                                                          |
+| `.prettierrc.json`                    | none                | formatting, auto-fixed and never reported                                                      |
+| `.jscpd.json`                         | structural          | duplication across files                                                                       |
+| `context/comments.md`                 | structural          | what a comment may be, and which half a sensor can check                                       |
+| `scripts/jscpd-sensor.mjs`            | structural          | duplication findings, in the same coached format                                               |
+| `scripts/gitleaks-sensor.mjs`         | secrets             | credentials, redacted, with the allow-comment closed                                           |
+| `scripts/docs-sensor.mjs`             | documentation       | the scripts and links the prose claims, against the repo                                       |
+| `stryker.config.mjs`                  | behavioral          | mutation testing, scoped to changed files                                                      |
+| `scripts/behavior-sensor.mjs`         | behavioral          | the escalation: types, then tests, then the mutants missed                                     |
+| `scripts/edit-sensors.mjs`            | trigger             | runs the cheap tier over the files an edit just touched                                        |
+| `scripts/stop-sensor.mjs`             | trigger             | the end-of-turn hook, shared by both runtimes unchanged                                        |
+| `scripts/sensor-tier.mjs`             | trigger             | the `SENSORS` switch that decides which tier owns them                                         |
+| `scripts/session-ledger.mjs`          | trigger             | the changed-path ledger the Stop hooks read                                                    |
+| `scripts/worktree-watch.mjs`          | trigger             | catches a file a shell command wrote, which names no path                                      |
+| `scripts/worktree-baseline.mjs`       | trigger             | SessionStart; the one hook both runtimes share unchanged                                       |
+| `scripts/sensors-doctor.mjs`          | trigger             | whether the hooks are declared, and whether they ever ran                                      |
+| `.husky/pre-commit`                   | trigger             | the commit gate, and where the tier above it is audited                                        |
+| `.claude/settings.json`               | trigger             | SessionStart and PostToolUse wiring for Claude Code                                            |
+| `.claude/hooks/`                      | trigger             | the Claude Code adapter; a PreToolUse deny is deferred                                         |
+| `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                                                                  |
+| `.codex/hooks/`                       | trigger             | the Codex adapter                                                                              |
+| `.agents/skills/design-sensor/`       | design              | the reviewer: the twelve questions, one file both runtimes load                                |
+| `context/design-charter.md`           | design              | why the list is closed, and why each exclusion is one                                          |
+| `scripts/design-charter.mjs`          | design              | the twelve ids, where the recorder can enforce them                                            |
+| `scripts/design-gate.mjs`             | design              | the guards that decide whether the review is worth buying                                      |
+| `scripts/design-review.mjs`           | design              | records a review, or refuses it and asks again                                                 |
+| `AGENTS.md`                           | contract            | what the agent is told: the ports, and sensor integrity with no numbers in it                  |
 
 ## The structural sensor
 
@@ -839,6 +842,10 @@ moved off the per-edit tier has to be added to this one in the same change.
 
 The two cheap-tier rows are the easy win: duplication and secret scanning are **one tool each,
 whatever you write**. Neither parses your language, so neither needs a port.
+
+That table names the tools. The mapping you actually write — this repo's finding ids against your
+linter's rule names — is in [INSTALL.md](INSTALL.md), because the guides are keyed by a canonical id
+and never by a rule id. That indirection is why the guide catalogue ports without being rewritten.
 
 Two of the rules in this repo have no off-the-shelf equivalent in any of those columns — the one
 that finds commented-out code and the one that bans mocking libraries. Each is about
