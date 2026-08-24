@@ -72,6 +72,8 @@ export default defineConfig(
   {
     files: ['**/*.{js,mjs,ts}'],
     extends: [js.configs.recommended],
+    // A rule you can switch off from inside the file it reports is not a rule.
+    linterOptions: { noInlineConfig: true },
     languageOptions: { globals: globals.node },
     plugins: { sensors: sensorRules },
     rules: { ...maintainabilityRules, ...commentRules },
