@@ -105,9 +105,12 @@ verbatim: `.jscpd.json`, `scripts/sensor-report.mjs`, `scripts/sensor-guides.mjs
 Point `.jscpd.json` at real source roots — in Maven that is `src/main/java` and `src/test/java`, not
 `src`.
 
-**Pin `jscpd` to `^5`.** `jscpd-sensor.mjs` invokes `node_modules/jscpd/run-jscpd.js`, which exists
-only in v5. On v4 the spawn fails, no report is written, and the sensor reports `PASS` on a
-repository full of clones. Check the resolved version before you believe a green.
+**Pin `jscpd` to `^5`, and do not trust the pin.** `jscpd-sensor.mjs` invokes
+`node_modules/jscpd/run-jscpd.js`, which exists only in v5. When that file is absent the spawn
+fails, no report is written, and the sensor reports `PASS` on a repository full of clones, exiting 0. Measured on a correctly pinned install: rename the file away and ten real findings become zero.
+A pruned `node_modules` or a future layout change does the same. **Never accept a rung 1 green you
+have not proved with the probe** — right now the probe is the only thing separating _no clones_ from
+_no sensor_.
 
 **Probe.** Paste one identical 60-token block into two files and confirm a duplication `FAIL`.
 

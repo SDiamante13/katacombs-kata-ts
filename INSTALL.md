@@ -69,11 +69,17 @@ scripts/gitleaks-sensor.mjs
 `sensor-guides.mjs` imports the whole guide catalogue, so you get coaching text for sensors you have
 not installed yet. It is inert and it is waiting for rungs 2 and 4.
 
-**Pin `jscpd` to `^5`.** `jscpd-sensor.mjs` invokes `node_modules/jscpd/run-jscpd.js`, which only
-exists in v5 — a bare `npm i jscpd` can resolve v4, whose layout is `bin/jscpd`. The spawn then
-fails, no report is written, and the sensor reports `PASS` on a repository full of clones. That is
-rule 0 of [the contract](#the-contract) being broken by the reference implementation itself; until
-it is fixed, the version pin is what stands between you and a false green.
+**Pin `jscpd` to `^5`, and do not trust the pin.** `jscpd-sensor.mjs` invokes
+`node_modules/jscpd/run-jscpd.js`, which only exists in v5 — a bare `npm i jscpd` can resolve v4,
+whose layout is `bin/jscpd`. The spawn then fails, no report is written, and the sensor reports
+`PASS` on a repository full of clones, exiting 0 so an agent's turn completes clean.
+
+**The pin narrows the trigger; it does not close the hole.** Measured on a correctly pinned v5
+install: rename that one file away and ten real findings become `PASS (0 findings)`. A pruned
+`node_modules`, a partial install or a future layout change all reproduce it. This is rule 0 of
+[the contract](#the-contract) broken by the reference implementation itself, and until the sensor
+learns to say `UNAVAILABLE` the duplication probe below is not ceremony — **it is the only thing
+that tells you the difference between no clones and no sensor.**
 
 **Wire.** Two scripts in `package.json` — add one if your project has no `package.json` yet:
 
