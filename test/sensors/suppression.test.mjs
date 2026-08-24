@@ -9,6 +9,8 @@ afterAll(() => scratch.remove());
 
 const OVER_THE_LIMIT =
   'export function tooMany(a, b, c, d, e) {\n  return [a, b, c, d, e];\n}\n';
+const TYPED_OVER_THE_LIMIT =
+  'export function tooMany(a: number, b: number, c: number, d: number, e: number): number[] {\n  return [a, b, c, d, e];\n}\n';
 
 // Every shape of inline disable ESLint accepts, including the blanket one.
 const EVASIONS = [
@@ -26,6 +28,13 @@ const EVASIONS = [
     'a disable carrying a written reason',
     `// eslint-disable-next-line max-params -- legacy adapter\n${OVER_THE_LIMIT}`,
   ],
+  ['inline rule config', `/* eslint max-params: "off" */\n${OVER_THE_LIMIT}`],
+];
+
+// linterOptions has to carry into the TypeScript blocks, not only the base one.
+const BOTH_EXTENSIONS = [
+  ['typed.ts', TYPED_OVER_THE_LIMIT],
+  ['untyped.mjs', OVER_THE_LIMIT],
 ];
 
 function probe(name, body) {
@@ -48,6 +57,13 @@ describe('an inline disable cannot silence a sensor', () => {
     ]);
 
     expect(verdict.report).toContain('no effect');
+  });
+
+  it.each(BOTH_EXTENSIONS)('reaches a blanket disable in %s', (name, body) => {
+    const verdict = inspect([probe(name, `/* eslint-disable */\n${body}`)]);
+
+    expect(verdict.passed).toBe(false);
+    expect(verdict.report).toContain('max-params');
   });
 
   it('still reports the suppressed finding at the commit gate', () => {
