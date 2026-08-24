@@ -75,22 +75,20 @@ so plainly if it is missing, and offer the two honest options: install Node, or 
 
 This is the step that makes an agent worth more than a copied config, so do not skip it.
 
-For each threshold, measure the current distribution across the repository, then **propose the
-tightest value that leaves fewer than about twenty findings today**. Record the reference value
-beside it so the gap is visible. The direction of travel is always tighter, because an agent never
-gets tired of refactoring — but a wall of red on day one gets the whole apparatus deleted.
+**Read the reference values out of the source repository's `eslint.config.mjs`.** Do not carry them
+in your head and do not take them from this file — a threshold written into a document is a copy of
+the config that goes stale without anything noticing. Six of them are set there: function length,
+file length, cyclomatic complexity, parameters, nesting depth, statements.
 
-| Threshold             | Reference here | Propose                                  |
-| --------------------- | -------------- | ---------------------------------------- |
-| function length       | 25 lines       | measured — Java carries more ceremony    |
-| file length           | 150 lines      | measured — expect this one to be loosest |
-| cyclomatic complexity | 5              | measured                                 |
-| parameters            | 4              | measured                                 |
-| nesting depth         | 2              | measured                                 |
-| statements            | 15             | measured                                 |
+For each one, measure the current distribution across the target repository, then **propose the
+tightest value that leaves fewer than about twenty findings today**. The direction of travel is
+always tighter, because an agent never gets tired of refactoring — but a wall of red on day one gets
+the whole apparatus deleted.
 
-Report both numbers to the human. "Complexity 8 today, 5 is where this repo runs it, here is the gap
-and here are the twelve methods in the way" is a conversation. A pasted `5` is an argument.
+Report both numbers to the human, always as a pair. "Complexity 8 today, 5 is where the source repo
+runs it, here is the gap and here are the twelve methods in the way" is a conversation. A pasted `5`
+is an argument. Expect file length to be the loosest of the six in a language more ceremonious than
+TypeScript, and say so rather than quietly setting it high.
 
 ### 3. Propose, then stop
 
