@@ -105,9 +105,23 @@ verbatim: `.jscpd.json`, `scripts/sensor-report.mjs`, `scripts/sensor-guides.mjs
 Point `.jscpd.json` at real source roots — in Maven that is `src/main/java` and `src/test/java`, not
 `src`.
 
-**Probe.** Paste one identical 60-token block into two files and confirm a duplication `FAIL`. Put
-`AKIAIOSFODNN7EXAMPLE` — AWS's published dummy key, so nothing real is at risk — into a scratch file
-and confirm a secret `FAIL`. Delete both.
+**Pin `jscpd` to `^5`.** `jscpd-sensor.mjs` invokes `node_modules/jscpd/run-jscpd.js`, which exists
+only in v5. On v4 the spawn fails, no report is written, and the sensor reports `PASS` on a
+repository full of clones. Check the resolved version before you believe a green.
+
+**Probe.** Paste one identical 60-token block into two files and confirm a duplication `FAIL`.
+
+For secrets, **generate the credential — never write a fixed literal into a probe**:
+
+```sh
+printf 'aws_access_key_id = AKIAWK1DLUBYG5EWOWSI\naws_secret_access_key = %s\n' \
+  "$(head -c 30 /dev/urandom | base64 | tr -d '\n=+/' | head -c 40)" > scratch-probe.txt
+```
+
+Confirm a secret `FAIL`, then delete both probes. Published example keys — `AKIAIOSFODNN7EXAMPLE`
+and AWS's example secret among them — sit in gitleaks' own allowlist and report **no leaks found**,
+as does a bare access-key id with no secret beside it. A probe built from any of those passes while
+detecting nothing, which is the exact failure the probe step exists to catch.
 
 ### 5. Rung 2 — structural, in this language
 
@@ -170,7 +184,14 @@ are the one thing that stays runtime-specific, because they genuinely differ; sk
 
 ## The contract you must not break
 
-Four rules. Everything else is an implementation of them.
+Five rules. Everything else is an implementation of them.
+
+**A sensor that could not run says so, and never says PASS.** Every sensor needs a positive proof of
+execution independent of its finding count. Zero findings and a tool that never ran look identical
+from the outside, and only one is good news. An exit code is usually not enough — Checkstyle exits
+nonzero for both _violations found_ and _died_ — so gate on something positive, such as the opening
+tag of the XML it should have produced. **This is the rule to check first when a newly installed
+sensor reports PASS on a codebase you expected findings from.**
 
 **One report line per sensor**, so a turn can be scanned:
 

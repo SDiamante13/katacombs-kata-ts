@@ -69,6 +69,12 @@ scripts/gitleaks-sensor.mjs
 `sensor-guides.mjs` imports the whole guide catalogue, so you get coaching text for sensors you have
 not installed yet. It is inert and it is waiting for rungs 2 and 4.
 
+**Pin `jscpd` to `^5`.** `jscpd-sensor.mjs` invokes `node_modules/jscpd/run-jscpd.js`, which only
+exists in v5 — a bare `npm i jscpd` can resolve v4, whose layout is `bin/jscpd`. The spawn then
+fails, no report is written, and the sensor reports `PASS` on a repository full of clones. That is
+rule 0 of [the contract](#the-contract) being broken by the reference implementation itself; until
+it is fixed, the version pin is what stands between you and a false green.
+
 **Wire.** Two scripts in `package.json` — add one if your project has no `package.json` yet:
 
 ```json
@@ -85,13 +91,27 @@ Point `.jscpd.json` at your source roots. In a Maven project that is `src/main/j
 
 **Prove it fired.** A sensor you have not watched fail is a sensor you are guessing about.
 
+For duplication, paste one identical 60-token block into two files and run `npm run dup:sensor`.
+
+For secrets, **generate the probe rather than copying a literal out of this page**:
+
 ```sh
-npm run dup:sensor     # after pasting the same 60-token block into two files
-npm run secret:sensor  # after dropping AKIAIOSFODNN7EXAMPLE into a scratch file
+printf 'aws_access_key_id = AKIAWK1DLUBYG5EWOWSI\naws_secret_access_key = %s\n' \
+  "$(head -c 30 /dev/urandom | base64 | tr -d '\n=+/' | head -c 40)" > scratch-probe.txt
+npm run secret:sensor
+rm scratch-probe.txt
 ```
 
-Both must report `FAIL`. That string is AWS's own documented dummy key, so nothing real is at risk.
-Delete both probes afterwards.
+Both must report `FAIL`. Delete both probes afterwards.
+
+**Why generated, and not a famous example key.** A published dummy such as
+`AKIAIOSFODNN7EXAMPLE` is in gitleaks' own allowlist and reports **no leaks found** — measured on
+8.30.1. So does a random access-key id on its own, because recent gitleaks treats a bare key id as an
+identifier rather than a secret and wants a co-located secret with real entropy. So does AWS's
+published example _secret_ key, for the same allowlist reason. A probe built from any of those
+passes while detecting nothing, which is the precise failure this step exists to catch — a fixed
+literal in a document is one allowlist entry away from silently becoming a no-op, and you would
+never find out.
 
 ### Rung 2 — The structural sensor, in your language
 
@@ -211,7 +231,17 @@ runtime-specific manifest is duplicated because it genuinely differs, and everyt
 
 ## The contract
 
-Port this and the rest follows. Everything above is an implementation of the four rules below.
+Port this and the rest follows. Everything above is an implementation of the five rules below.
+
+**0. A sensor that could not run says so. It never says PASS.** Every sensor needs a positive
+proof of execution that is independent of its finding count — the tool was present, it started, it
+produced output. Zero findings and a tool that never ran are indistinguishable by finding count
+alone, and only one of them is good news.
+
+This rule is first because it is the one that fails silently. An exit code is usually not enough:
+Checkstyle exits nonzero both for _violations found_ and for _died_, so gate on something positive
+instead, such as the opening tag of the XML it should have written. Report `UNAVAILABLE`, not
+`PASS`, and say what could not run.
 
 **1. One report line per sensor.** Exactly this shape, so a human and an agent can both scan a turn:
 
@@ -237,14 +267,15 @@ millisecond has no excuse not to.
 
 ## What you must edit
 
-Everything else is a verbatim copy. These are the four places that know they are in this repository.
+Everything else is a verbatim copy. These are the places that know they are in this repository.
 
-| Where                      | What is hardcoded                                      | Do                                    |
-| -------------------------- | ------------------------------------------------------ | ------------------------------------- |
-| `scripts/edit-sensors.mjs` | Resolves `eslint` and `prettier` out of `node_modules` | Point at your linter and formatter    |
-| `scripts/edit-sensors.mjs` | `LINTABLE` — the extensions worth linting              | Your extensions                       |
-| `scripts/edit-sensors.mjs` | `CLONE_SCANNED` — which paths the clone detector reads | Your source roots                     |
-| `scripts/edit-sensors.mjs` | `OUT_OF_SCOPE` — build output and vendored directories | Add yours; leaving ours costs nothing |
+| Where                      | What is hardcoded                                      | Do                                                                |
+| -------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------- |
+| `scripts/edit-sensors.mjs` | Resolves `eslint` out of `node_modules`                | Point at your linter                                              |
+| `scripts/edit-sensors.mjs` | Resolves `prettier` out of `node_modules`              | Optional — delete `reformat()` if your toolchain has no formatter |
+| `scripts/edit-sensors.mjs` | `LINTABLE` — the extensions worth linting              | Your extensions                                                   |
+| `scripts/edit-sensors.mjs` | `CLONE_SCANNED` — which paths the clone detector reads | Your source roots                                                 |
+| `scripts/edit-sensors.mjs` | `OUT_OF_SCOPE` — build output and vendored directories | Add yours; leaving ours costs nothing                             |
 
 `CLONE_SCANNED` is the one worth double-checking. Getting it wrong means duplication silently goes
 unscanned, and a false `PASS` is worse than a `FAIL` — it is the failure this whole apparatus exists
