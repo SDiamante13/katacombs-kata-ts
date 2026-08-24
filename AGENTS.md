@@ -16,7 +16,7 @@ src/adapters   terminal and web — implementations of those interfaces
 A port is an interface the domain declares, named for the capability the game needs rather than the
 tool that will supply it — `GameOutput`, not `ConsoleWriter`. The domain takes it as a parameter and
 never learns which implementation arrived. An adapter implements one port with the real thing — the
-terminal now, the browser at task 11 — and lives in `src/adapters`.
+terminal now, the browser later — and lives in `src/adapters`.
 
 Anything from outside the game gets a port first and an adapter second.
 
