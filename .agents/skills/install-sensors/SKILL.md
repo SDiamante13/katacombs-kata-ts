@@ -56,16 +56,17 @@ file holds the procedure.
 Detect rather than ask, then confirm what you detected. Ask only what the repository cannot tell
 you.
 
-| Look at                            | Tells you                     |
-| ---------------------------------- | ----------------------------- |
-| `pom.xml`, `build.gradle*`         | Java — Maven or Gradle        |
-| `package.json`                     | JS/TS, and the script surface |
-| `pyproject.toml`, `setup.cfg`      | Python                        |
-| `go.mod`, `Cargo.toml`             | Go, Rust                      |
-| existing lint config               | What already runs, and how    |
-| `.claude/`, `.codex/`, `AGENTS.md` | Which agent runtime is in use |
-| `node --version`                   | Whether the wrappers can run  |
-| `gitleaks version`                 | Whether rung 1 is complete    |
+| Look at                            | Tells you                                     |
+| ---------------------------------- | --------------------------------------------- |
+| `pom.xml`, `build.gradle*`         | Java — Maven or Gradle                        |
+| `package.json`                     | JS/TS, and the script surface                 |
+| `pyproject.toml`, `setup.cfg`      | Python                                        |
+| `go.mod`, `Cargo.toml`             | Go, Rust                                      |
+| existing lint config               | What already runs, and how                    |
+| `.claude/`, `.codex/`, `AGENTS.md` | Which agent runtime is in use                 |
+| `.agents/skills/`                  | Whether the open skill format is already here |
+| `node --version`                   | Whether the wrappers can run                  |
+| `gitleaks version`                 | Whether rung 1 is complete                    |
 
 Node 22 is a prerequisite for the sensor wrappers. It is glue that shells out to tools and formats
 what comes back, so it does not care what language it is inspecting — but it does have to run. Say
@@ -160,6 +161,12 @@ State what is installed, what is deferred, and what you could not verify. Never 
 about something you only wired. Rung 4 — mutation testing and the inferential design review — is
 deliberately not in this procedure; point at `SENSORS.md` and leave it until rung 3 has been green
 for a while.
+
+If you install anything skill-shaped, now or later, it lives once at
+`.agents/skills/<name>/SKILL.md` — the open Agent Skills format, which Codex reads directly and
+Claude Code reaches through a symlink at `.claude/skills/<name>`. **Never write a second copy.** Two
+files that must agree will stop agreeing, and nothing reports which one is current. Hook manifests
+are the one thing that stays runtime-specific, because they genuinely differ; skills do not.
 
 ## The contract you must not break
 

@@ -162,6 +162,10 @@ scripts/worktree-watch.mjs
 Both runtimes call the same core behind a thin adapter, because they hand you very different
 things: Claude Code names the file its edit tools wrote, Codex does not.
 
+**Hook manifests are the part that genuinely cannot be shared, so each runtime needs its own.** That
+is the exception rather than the rule — skills are shared, and rung 4 shows how. Copy the manifest
+for the runtime you use, and the other one too if your team runs both.
+
 **Codex asks for a one-time approval the first time a hook fires. Until you approve it, nothing runs
 and nothing says so.** Silence before approval looks exactly like silence after a clean edit.
 
@@ -186,6 +190,22 @@ review the agent performs against a closed charter, gated so it is bought once a
 Do not install these until rung 3 is green on every edit. They are gated behind the cheap sensors in
 the code, and the same order applies to installing them. Read [SENSORS.md](SENSORS.md) for how both
 are wired here; in Java the mutation tool is PIT and the boundary rules are ArchUnit.
+
+**Where a skill goes.** The inferential design sensor is a skill rather than a program, and it is
+the first thing you install that both runtimes have to read. It lives once:
+
+```
+.agents/skills/design-sensor/SKILL.md          the file
+.claude/skills/design-sensor -> ../../.agents/skills/design-sensor
+```
+
+`.agents/skills/` is the open Agent Skills format. Codex reads it directly; Claude Code reaches it
+through the symlink. **Never keep a second copy** — two files that must say the same thing will stop
+saying it, and nothing will tell you which one is current. If you want that guaranteed rather than
+remembered, assert in a test that the link is a link, so a copy put back in its place fails.
+
+This is the opposite of the hook manifests in rung 3, and the distinction is worth holding: a
+runtime-specific manifest is duplicated because it genuinely differs, and everything else is not.
 
 ---
 
