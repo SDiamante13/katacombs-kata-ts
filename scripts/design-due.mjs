@@ -40,7 +40,7 @@ function blockReason(scope) {
     '  npm run design:scope',
     '  npm run design:review -- <findings.json>',
     '',
-    'Both runtimes carry it: `.claude/skills/design-sensor/SKILL.md`, and the `.codex/` twin.',
+    'Both runtimes read one file: `.agents/skills/design-sensor/SKILL.md`.',
     '',
     ...scope.source.map((file) => `  ${file}`),
     '',

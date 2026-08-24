@@ -10,7 +10,17 @@ export default {
   reporters: ['json', 'html'],
   jsonReporter: { fileName: 'reports/mutation/mutation.json' },
   htmlReporter: { fileName: 'reports/mutation/mutation.html' },
-  ignorePatterns: ['.stryker-tmp', 'reports', 'capture', 'docs', 'context'],
+  // The sandbox is a file copy, and copyFile cannot copy a symlinked directory.
+  ignorePatterns: [
+    '.stryker-tmp',
+    'reports',
+    'capture',
+    'docs',
+    'context',
+    '.agents',
+    '.claude',
+    '.codex',
+  ],
   tempDirName: '.stryker-tmp',
   cleanTempDir: true,
   logLevel: 'off',

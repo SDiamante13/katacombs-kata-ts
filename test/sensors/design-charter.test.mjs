@@ -1,13 +1,13 @@
-import { readFileSync } from 'node:fs';
+import { lstatSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
 import { charter } from '../../scripts/design-charter.mjs';
 
-const claudeSkill = path.resolve('.claude/skills/design-sensor/SKILL.md');
-const codexSkill = path.resolve('.codex/skills/design-sensor/SKILL.md');
-const skill = readFileSync(claudeSkill, 'utf8');
+const skillSource = path.resolve('.agents/skills/design-sensor/SKILL.md');
+const claudeSkill = path.resolve('.claude/skills/design-sensor');
+const skill = readFileSync(skillSource, 'utf8');
 const argument = readFileSync(path.resolve('context/design-charter.md'), 'utf8');
 
 function numberedQuestions(text) {
@@ -26,8 +26,11 @@ describe('the charter the reviewer reads and the charter the recorder enforces',
 });
 
 describe('the skill both runtimes read', () => {
-  it('is the same file in .claude and in .codex', () => {
-    expect(readFileSync(codexSkill, 'utf8')).toBe(skill);
+  it('is one file, which Claude Code reaches by a link and never by a copy', () => {
+    expect(lstatSync(claudeSkill).isSymbolicLink()).toBe(true);
+    expect(realpathSync(path.join(claudeSkill, 'SKILL.md'))).toBe(
+      realpathSync(skillSource),
+    );
   });
 
   it('carries the questions itself, so the reviewer needs no second file', () => {

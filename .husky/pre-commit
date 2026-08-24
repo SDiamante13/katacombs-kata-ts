@@ -1,4 +1,7 @@
-files=$(git diff --cached --name-only --diff-filter=ACMR)
+# Symlinked skill directories are staged as links; prettier refuses one by name.
+files=$(git diff --cached --name-only --diff-filter=ACMR | while read -r f; do
+  [ -L "$f" ] || printf '%s\n' "$f"
+done)
 if [ -n "$files" ]; then
   echo "$files" | xargs npx prettier --ignore-unknown --write
   echo "$files" | xargs git add

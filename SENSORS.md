@@ -2,42 +2,45 @@
 
 How each sensor is wired, and which files to copy into your own project.
 
-> **Status: stub.** The sensors land one at a time as this repo is built. Rows marked _pending_
-> are not written yet. Nothing here describes a file that does not exist.
-
 ## What to copy
 
-| File                                  | Sensor              | Does                                                       | Status  |
-| ------------------------------------- | ------------------- | ---------------------------------------------------------- | ------- |
-| `eslint.config.mjs`                   | structural + design | thresholds and type safety; boundary and purity pending    | live    |
-| `scripts/sensor-guides.mjs`           | structural + design | maps a rule id to its guide, with a fallback for the rest  | live    |
-| `scripts/guides/`                     | structural + design | the guide text, one file per tier                          | live    |
-| `scripts/eslint-rules/`               | structural          | eleven rules you write yourself, three of them about prose | live    |
-| `scripts/guides/tests.mjs`            | test design         | the guides for the six test-design rules                   | live    |
-| `context/wet-tests.md`                | test design         | why the test rules pull against the duplication sensor     | live    |
-| `scripts/sensor-report.mjs`           | all                 | the one `SENSOR x: PASS/FAIL` line every sensor prints     | live    |
-| `scripts/eslint-sensor-formatter.mjs` | structural + design | turns a rule id into a coaching guide                      | live    |
-| `.prettierrc.json`                    | none                | formatting, auto-fixed and never reported                  | live    |
-| `.jscpd.json`                         | structural          | duplication across files                                   | live    |
-| `context/comments.md`                 | structural          | what a comment may be, and which half a sensor can check   | live    |
-| `scripts/jscpd-sensor.mjs`            | structural          | duplication findings, in the same coached format           | live    |
-| `stryker.config.mjs`                  | behavioral          | mutation testing, scoped to changed files                  | pending |
-| `scripts/edit-sensors.mjs`            | trigger             | runs the cheap tier over the files an edit just touched    | live    |
-| `scripts/sensor-tier.mjs`             | trigger             | the `SENSORS` switch that decides which tier owns them     | live    |
-| `scripts/session-ledger.mjs`          | trigger             | the changed-path ledger the Stop hooks will read           | live    |
-| `scripts/worktree-watch.mjs`          | trigger             | catches a file a shell command wrote, which names no path  | live    |
-| `scripts/worktree-baseline.mjs`       | trigger             | SessionStart; the one hook both runtimes share unchanged   | live    |
-| `.claude/settings.json`               | trigger             | SessionStart and PostToolUse wiring for Claude Code        | live    |
-| `.claude/hooks/`                      | trigger             | the Claude Code adapter; PreToolUse pending                | live    |
-| `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                              | live    |
-| `.codex/hooks/`                       | trigger             | the Codex adapter                                          | live    |
-| `.claude/skills/design-sensor/`       | design              | the reviewer: the twelve questions and how to judge them   | live    |
-| `.codex/skills/design-sensor/`        | design              | the same file, for Codex CLI — no adapter needed           | live    |
-| `context/design-charter.md`           | design              | why the list is closed, and why each exclusion is one      | live    |
-| `scripts/design-charter.mjs`          | design              | the twelve ids, where the recorder can enforce them        | live    |
-| `scripts/design-gate.mjs`             | design              | the guards that decide whether the review is worth buying  | live    |
-| `scripts/design-review.mjs`           | design              | records a review, or refuses it and asks again             | live    |
-| `AGENTS.md`                           | contract            | what the agent is told, including sensor integrity         | pending |
+| File                                  | Sensor              | Does                                                                                           | Status |
+| ------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------- | ------ |
+| `eslint.config.mjs`                   | structural + design | thresholds, type safety, boundaries, purity — and no inline directive may switch any of it off | live   |
+| `eslint.edit.config.mjs`              | trigger             | the base config plus the relaxation red-green needs                                            | live   |
+| `scripts/sensor-guides.mjs`           | structural + design | maps a rule id to its guide, with a fallback for the rest                                      | live   |
+| `scripts/guides/`                     | structural + design | the guide text, one file per tier                                                              | live   |
+| `scripts/eslint-rules/`               | structural          | eleven rules you write yourself, three of them about prose                                     | live   |
+| `scripts/guides/tests.mjs`            | test design         | the guides for the six test-design rules                                                       | live   |
+| `context/wet-tests.md`                | test design         | why the test rules pull against the duplication sensor                                         | live   |
+| `scripts/sensor-report.mjs`           | all                 | the one `SENSOR x: PASS/FAIL` line every sensor prints                                         | live   |
+| `scripts/eslint-sensor-formatter.mjs` | structural + design | turns a rule id into a coaching guide                                                          | live   |
+| `.prettierrc.json`                    | none                | formatting, auto-fixed and never reported                                                      | live   |
+| `.jscpd.json`                         | structural          | duplication across files                                                                       | live   |
+| `context/comments.md`                 | structural          | what a comment may be, and which half a sensor can check                                       | live   |
+| `scripts/jscpd-sensor.mjs`            | structural          | duplication findings, in the same coached format                                               | live   |
+| `scripts/gitleaks-sensor.mjs`         | secrets             | credentials, redacted, with the allow-comment closed                                           | live   |
+| `scripts/docs-sensor.mjs`             | documentation       | the scripts and links the prose claims, against the repo                                       | live   |
+| `stryker.config.mjs`                  | behavioral          | mutation testing, scoped to changed files                                                      | live   |
+| `scripts/behavior-sensor.mjs`         | behavioral          | the escalation: types, then tests, then the mutants missed                                     | live   |
+| `scripts/edit-sensors.mjs`            | trigger             | runs the cheap tier over the files an edit just touched                                        | live   |
+| `scripts/stop-sensor.mjs`             | trigger             | the end-of-turn hook, shared by both runtimes unchanged                                        | live   |
+| `scripts/sensor-tier.mjs`             | trigger             | the `SENSORS` switch that decides which tier owns them                                         | live   |
+| `scripts/session-ledger.mjs`          | trigger             | the changed-path ledger the Stop hooks read                                                    | live   |
+| `scripts/worktree-watch.mjs`          | trigger             | catches a file a shell command wrote, which names no path                                      | live   |
+| `scripts/worktree-baseline.mjs`       | trigger             | SessionStart; the one hook both runtimes share unchanged                                       | live   |
+| `scripts/sensors-doctor.mjs`          | trigger             | whether the hooks are declared, and whether they ever ran                                      | live   |
+| `.husky/pre-commit`                   | trigger             | the commit gate, and where the tier above it is audited                                        | live   |
+| `.claude/settings.json`               | trigger             | SessionStart and PostToolUse wiring for Claude Code                                            | live   |
+| `.claude/hooks/`                      | trigger             | the Claude Code adapter; a PreToolUse deny is deferred                                         | live   |
+| `.codex/hooks.json`                   | trigger             | the same wiring for Codex CLI                                                                  | live   |
+| `.codex/hooks/`                       | trigger             | the Codex adapter                                                                              | live   |
+| `.agents/skills/design-sensor/`       | design              | the reviewer: the twelve questions, one file both runtimes load                                | live   |
+| `context/design-charter.md`           | design              | why the list is closed, and why each exclusion is one                                          | live   |
+| `scripts/design-charter.mjs`          | design              | the twelve ids, where the recorder can enforce them                                            | live   |
+| `scripts/design-gate.mjs`             | design              | the guards that decide whether the review is worth buying                                      | live   |
+| `scripts/design-review.mjs`           | design              | records a review, or refuses it and asks again                                                 | live   |
+| `AGENTS.md`                           | contract            | what the agent is told: the ports, and sensor integrity with no numbers in it                  | live   |
 
 ## The structural sensor
 
@@ -166,6 +169,12 @@ checks two things and no more:
 
 It verifies that claims _exist_; it never runs them. A doc sensor that executed the commands it
 found would be a remote-code-execution hole pointed at your own README.
+
+Note where that stops. It reads fenced shell blocks and markdown links — not table cells, not
+sentences. A status column still saying `pending` beside a file that shipped days ago is invisible
+to it, and `npm run docs:sensor` passed clean over three such cells in this very document until
+somebody read it. **Nothing in this repository reads prose against code.** That is the documentation
+sensor's boundary rather than a bug in it, and it is worth knowing before you trust the green.
 
 ### Should a sensor be committed, or ignored?
 
@@ -666,7 +675,9 @@ file — and fails the commit rather than taking the claim on trust.
 One thing the doctor deliberately does not do: `codex exec` **does not re-verify hook trust once you
 have approved it**. The manifest's timeout, the hook's path, and the hook script's own contents can
 all be changed afterwards and non-interactive runs will re-run them without asking again. Nothing
-here notices that, and nothing here pretends to — the checksum tamper sensor is what covers it.
+here notices that, and nothing here covers it. A checksum over the hook scripts and the sensor files
+is what would; this repository does not have one, and the reason is that no agent has yet been
+observed reaching for them here.
 
 That difference is the whole argument for keeping the sensors out of the hooks. The core knows
 nothing about either runtime; the adapters know nothing about linting. Porting to a third agent is
@@ -837,4 +848,92 @@ usually shorter than the argument about whether you need it.
 
 ## Keeping a sensor honest
 
-_Pending: the ways an agent kills a sensor, and the defence for each one._
+Every sensor here can be switched off from inside the file it watches, and a switched-off sensor
+looks exactly like a clean run. Where that stands today: **one rung closed, one hole measured and
+shut, two deferred on evidence.**
+
+### One mechanism neutralises, the other reports
+
+That distinction is the whole of it, and blurring the two is how a repository ends up believing it
+is covered twice.
+
+- `linterOptions: { noInlineConfig: true }` **neutralises.** Every inline ESLint directive is inert
+  — the blanket `/* eslint-disable */`, the next-line form, a disabled region, a directive carrying
+  a written reason, inline rule config. The suppressed finding comes back, _and_ ESLint names the
+  dead directive: `'/* eslint-disable */' has no effect`. The formatter routes that message to the
+  `sensor-contract` guide, so the attempt gets coached like anything else.
+- `sensors/no-sensor-suppression` **reports.** `jscpd:ignore`, `gitleaks:allow` and
+  `// Stryker disable` are other tools' comments. ESLint cannot undo them, so the rule names them
+  and stops there; the duplicate stays hidden until a human reads the finding.
+
+The difference is not a preference. It is whether the tool that finds the comment is the tool the
+comment was aimed at.
+
+Both numbers are measured, over a corpus of every disable shape ESLint accepts. Without the setting,
+five of six evasions are silent. With it, all six report. `test/sensors/suppression.test.mjs` pins
+that, and it pins it hard: delete the line from the config and 15 of its 16 cases go red. The
+survivor is a directive written as a string literal, which is meant to stay green either way — a
+corpus where _everything_ flips is a corpus that is not discriminating.
+
+Two costs, because "it disables suppressions" is only the convenient half of the truth.
+`/* global */` and `/* exported */` are inline configuration too, and they go inert with the rest.
+`/* global */` is a legitimate, non-suppression use of a comment, and losing it is the honest price
+of the line; the answer is `languageOptions.globals`. Other tools' comments are untouched —
+`// prettier-ignore` still works, and `@ts-expect-error` is TypeScript's, covered by
+`ban-ts-comment`.
+
+It lives in `eslint.config.mjs` rather than as a `--no-inline-config` flag for the same reason most
+things here live in one place. ESLint is invoked twice — `lint:sensor` at the commit gate and
+`edit-sensors.mjs` per edit — so a flag would have had to be correct in two of them. `linterOptions`
+is inherited by `eslint.edit.config.mjs`, which spreads the base config, so one line covers both
+tiers and cannot drift apart.
+
+### Taking an exception on purpose
+
+A sensor with no way out gets deleted the first time it is genuinely wrong. So there is a way out,
+and this is it — the one form an approved exception may take, which is what
+[`AGENTS.md`](AGENTS.md) sends you here for. It is not a comment. It is a scoped block in
+`eslint.config.mjs`, after the base config:
+
+```js
+{ files: ['path/to/file.ts'], rules: { 'max-params': 'off' } },
+```
+
+That clears the finding on the named file and leaves its neighbours reporting. Three shapes cover
+everything: a `files:` block for a file or a glob, `ignores` for a generated or vendored directory,
+`languageOptions.globals` for a global the code legitimately needs.
+
+What it buys over a comment is three properties a comment does not have. The exception is **visible
+in a diff**, so it is reviewed as a change to the contract rather than as one line inside a change
+to something else. It is **greppable**, so the project's exceptions can be listed. And it is
+**scoped to a named path**, so it cannot quietly widen. A comment on line 400 of a source file is
+none of those.
+
+Two honest costs. It is more ceremony than a comment — that is the point, and it is still a cost.
+And a `files:` glob goes stale silently when the file moves. That one **fails closed**: the rule
+comes back on and you get a finding, not a false green. The right direction, still an edge.
+
+This is a human move. The agent-facing contract says to fix the cause and never the rule, and an
+exception is a change to the contract, which needs someone to approve it.
+
+### What is not built, and why
+
+Two rungs of the ladder are missing, and a section on keeping sensors honest cannot leave that out.
+There is **no PreToolUse hook denying writes** to the config files and hook manifests, and **no
+checksum** over the hook scripts and the sensor files.
+
+Both are cheap to write. Neither is here, because nothing in this repository has yet reached for
+them. An unfenced probe run — the fences existing only as a sentence in the prompt, no deny, no
+checksum — produced 74 findings, took the coaching, and left all four config files clean with zero
+suppressions. The `eslint-disable` hole was the opposite case: measured first, five of six evasions
+silently working, then closed.
+
+So the question is not _could an agent do this_, because it could do anything. It is **does the
+sensor find something the moment it runs**. The suppression corpus found five holes on its first
+run; a deny and a checksum would each have run clean on day one. That is a test with fewer
+assumptions in it than any argument about likelihood, and it is checkable in an afternoon.
+
+These are deferred rather than dropped, and the reason is the `codex exec` gap described above: an
+approved hook can be edited afterwards and re-runs without a recheck, and a checksum is the only
+thing that would notice. That hole is open. When something in this repository reaches for a config
+file, these two stop being speculative and get built.

@@ -1,9 +1,9 @@
 # Why the design charter is closed, and why each exclusion is an exclusion
 
 The twelve questions themselves are not here. They live in the skill the reviewer actually reads —
-[`.claude/skills/design-sensor/SKILL.md`](../.claude/skills/design-sensor/SKILL.md), and its
-byte-identical twin under `.codex/`. Repeating them here would be question 12: a document restating
-what another artifact already shows, going stale the first time somebody edits one copy.
+[`.agents/skills/design-sensor/SKILL.md`](../.agents/skills/design-sensor/SKILL.md), one file that
+both runtimes load. Repeating them here would be question 12: a document restating what another
+artifact already shows, going stale the first time somebody edits one copy.
 
 This page holds the part the skill cannot carry — the argument for why the list looks like that.
 
