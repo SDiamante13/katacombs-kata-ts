@@ -3,7 +3,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const scratchRoot = path.resolve('test/.scratch');
+// Not a dot-directory: TypeScript skips those, so a .ts fixture would go unparsed.
+const scratchRoot = path.resolve('test/scratch');
 
 export function scratchSpace(prefix) {
   const root = mkdtempSync(path.join(tmpdir(), prefix));

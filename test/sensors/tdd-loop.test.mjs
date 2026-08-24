@@ -1,21 +1,13 @@
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
-
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { inspect } from '../../scripts/edit-sensors.mjs';
-import { runSensor } from './sensor-harness.mjs';
+import { projectScratch, runSensor } from './sensor-harness.mjs';
 
-const scratch = 'test/tdd-probe';
+const scratch = projectScratch('tdd-loop');
 
-afterAll(() => rmSync(scratch, { recursive: true, force: true }));
+afterAll(() => scratch.remove());
 
-function probe(name, body) {
-  mkdirSync(scratch, { recursive: true });
-  const file = `${scratch}/${name}`;
-  writeFileSync(file, body);
-
-  return file;
-}
+const probe = (name, body) => scratch.file(name, body);
 
 // Both languages: the relaxation is per rule id, and each extension uses a different one.
 const STUBS = [
