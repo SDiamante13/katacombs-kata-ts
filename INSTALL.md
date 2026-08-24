@@ -192,6 +192,20 @@ things: Claude Code names the file its edit tools wrote, Codex does not.
 is the exception rather than the rule — skills are shared, and rung 4 shows how. Copy the manifest
 for the runtime you use, and the other one too if your team runs both.
 
+**The matcher must include `Bash`, and this is not optional.** The obvious matcher lists the edit
+tools — `Edit|Write|MultiEdit|NotebookEdit` — and an install that stops there is blind to most of
+what an agent actually does. One unattended nine-hour session was measured at **83 Bash calls and
+zero Edit or Write calls**: every single edit arrived as `cat > file <<'EOF'` or a `python3`
+heredoc. A matcher without `Bash` would have seen none of it and reported nothing.
+
+```json
+"matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash"
+```
+
+Matching `Bash` is half of it. A shell command names no file, so the hook has nothing to lint until
+something tells it what moved — that is what `worktree-baseline.mjs` and `worktree-watch.mjs` in the
+copy list are for. Leave either out and the `Bash` in your matcher does nothing.
+
 **Codex asks for a one-time approval the first time a hook fires. Until you approve it, nothing runs
 and nothing says so.** Silence before approval looks exactly like silence after a clean edit.
 
@@ -201,8 +215,8 @@ and nothing says so.** Silence before approval looks exactly like silence after 
 EDIT SENSORS: eslint FAIL · jscpd PASS · gitleaks PASS
 ```
 
-Then run the doctor, which is the only thing that can tell you a hook is wired _and_ has actually
-run:
+Then run the doctor, which is the only thing that can tell you a hook is wired, that every script
+your manifests name actually exists, _and_ that a hook has actually run:
 
 ```sh
 npm run sensors:doctor

@@ -1,7 +1,12 @@
 import { existsSync } from 'node:fs';
 
 import { behaviorReport, summarise, unavailableReport } from './behavior-findings.mjs';
-import { markReportStale, reportStamp, viewablePath } from './mutation-run.mjs';
+import {
+  markReportStale,
+  readablePath,
+  reportStamp,
+  viewablePath,
+} from './mutation-run.mjs';
 import { sensorReport } from './sensor-report.mjs';
 
 const SKIP_REPORT = [
@@ -18,7 +23,7 @@ function trailer(findings) {
 
   if (!fromMutation || !existsSync(viewablePath) || !stamp) return '';
 
-  return `\nEvery mutant, killed and surviving, for ${stamp.files.join(', ')}: npm run behavior:report\n`;
+  return `\nEvery mutant, killed and surviving, for ${stamp.files.join(', ')}: npm run behavior:report\nThe same findings, for something that reads rather than looks: ${readablePath}\n`;
 }
 
 function accounting(report) {

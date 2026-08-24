@@ -62,3 +62,8 @@ export function fireHook(hook, payload, environment = {}) {
 
   return { out: result.stdout, err: result.stderr, status: result.status };
 }
+
+export function forgetSession(session) {
+  rmSync(`reports/ledger/${session}.txt`, { force: true });
+  rmSync(`reports/ledger/${session}.worktree.json`, { force: true });
+}

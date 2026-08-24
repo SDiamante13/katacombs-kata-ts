@@ -3,6 +3,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { deadHooks } from './registered-hooks.mjs';
 import { lastSeen } from './sensor-liveness.mjs';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
@@ -114,12 +115,22 @@ function commitGate() {
   return `  Commit gate\n    .husky/pre-commit  ${mark(installed)}`;
 }
 
+// A hook whose script is missing fails silently: no events, no ledger, no error.
+function registrations(dead) {
+  const lines = dead.map((hook) => `    ${hook.manifest} names ${hook.script}  MISSING`);
+
+  return ['  Registered hooks', ...(lines.length ? lines : ['    all resolve  ok'])].join(
+    '\n',
+  );
+}
+
 function reportOn(states) {
+  const dead = deadHooks();
   const broken = states.filter((state) => !state.wired || !state.installed);
-  const body = [...states.map(describe), commitGate()].join('\n\n');
+  const body = [...states.map(describe), commitGate(), registrations(dead)].join('\n\n');
 
   process.stdout.write(`SENSORS DOCTOR\n\n${body}\n\n`);
-  process.exitCode = broken.length === 0 ? 0 : 1;
+  process.exitCode = broken.length === 0 && dead.length === 0 ? 0 : 1;
 }
 
 const REFUSAL = [

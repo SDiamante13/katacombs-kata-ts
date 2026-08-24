@@ -28,6 +28,7 @@ const MUTATION_BUDGET = 90_000;
 const runRoot = path.join(mutationRoot, String(process.pid));
 
 export const viewablePath = path.join(mutationRoot, 'mutation.html');
+export const readablePath = path.join(mutationRoot, 'mutation.json');
 const stampPath = path.join(mutationRoot, 'mutation.stamp.json');
 
 // A fixed report path is how two concurrent runs read each other's answer.
@@ -87,10 +88,16 @@ function writeStamp(stamp) {
   }
 }
 
-function publishReport(files, at) {
-  const produced = path.join(runRoot, 'mutation.html');
+// The html is for a person, the json for whatever reads the findings back.
+function promote(name, destination) {
+  const produced = path.join(runRoot, name);
 
-  if (existsSync(produced)) renameSync(produced, viewablePath);
+  if (existsSync(produced)) renameSync(produced, destination);
+}
+
+function publishReport(files, at) {
+  promote('mutation.html', viewablePath);
+  promote('mutation.json', readablePath);
   writeStamp({ at, files, run: process.pid, current: true });
   rmSync(runRoot, { recursive: true, force: true });
 }

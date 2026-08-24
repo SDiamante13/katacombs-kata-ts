@@ -6,6 +6,17 @@ import { ledgerFile, ledgerRoot } from './ledger-path.mjs';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 
+const HARNESS_FIXTURE = /^test\/scratch\/|__sensor-fixture__/;
+
+// Why the suite sees its own fixtures and a live session does not: context/test-isolation.md
+function suiteIsWatching() {
+  return Boolean(process.env.VITEST);
+}
+
+function theAgentsOwnWork(file) {
+  return suiteIsWatching() || !HARNESS_FIXTURE.test(file);
+}
+
 function stampOf(file) {
   const full = path.join(projectRoot, file);
 
@@ -13,7 +24,11 @@ function stampOf(file) {
 }
 
 export function snapshot() {
-  return Object.fromEntries(dirtyPaths().map((file) => [file, stampOf(file)]));
+  return Object.fromEntries(
+    dirtyPaths()
+      .filter(theAgentsOwnWork)
+      .map((file) => [file, stampOf(file)]),
+  );
 }
 
 export function movedFiles(before, after) {

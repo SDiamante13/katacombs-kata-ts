@@ -39,3 +39,28 @@ demonstrated live. An intermittent red on stage cannot be explained away in the 
 
 If you want the parallelism back, the fix is not the flag. It is to stop the tests sharing a working
 tree — give each one its own repository fixture — at which point the flag can go.
+
+## The same collision, against a live session
+
+Date: 2026-08-24
+
+Running the files one at a time settles the tests against each other. It does nothing about the
+other observer of the same working tree: **the edit sensor firing for a live agent while the suite
+runs.**
+
+A nine-hour unattended session measured it. Five of seven blocks that session were not about the
+agent's code — three were walls of coaching about `test/scratch/` fixtures, and two were ESLint
+crashing with `ENOENT` because a fixture was deleted between enumerating files and reading them.
+The agent had to recognise and dismiss every one mid-cycle.
+
+The tempting fix is to exclude `test/scratch/` from the worktree watch. **It is the wrong fix, and
+this suite catches it**: two tests plant into that very directory to prove the sensor still sees a
+file written by a shell command, which names no path. Excluding the fixture root disables the
+capability the fixtures exist to demonstrate. The leak and the capability are one mechanism.
+
+The discriminator is not the path, it is who spawned the hook. A hook the suite spawned inherits
+`VITEST` from the runner; a hook a live session spawned does not. So the watch shows fixtures to
+the first and hides them from the second, and both keep working.
+
+This is a patch over the shared working tree, not a repair of it. The repair is still the one named
+above — give each test its own repository fixture — and it would retire this branch too.
