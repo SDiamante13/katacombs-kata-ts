@@ -151,12 +151,13 @@ around worth picking up.
 **Treasure.** Gold is collected the first time you enter a location holding it, or open something
 containing it. Your score is the gold you leave with.
 
-**When the game can't oblige.** Looking somewhere uninteresting, attempting something the location
-doesn't support, and typing nonsense each get a distinct reply, so you can tell which of the three
-happened.
+**When the game can't oblige.** Typing nonsense, looking somewhere uninteresting, attempting
+something the location doesn't support, and being stopped by a thing you could open each get a
+distinct reply, so you can tell which of the four happened. The last one is the one that matters:
+"the iron gate is closed" tells you what to do next, and "you can't go that way" doesn't.
 
-Building it in slices (movement, then looking, then items, then treasure) gives the sensors
-something to react to on every increment.
+It gets built in slices, each one playable — [`backlog/`](backlog/README.md) has the order and the
+acceptance criteria. That gives the sensors something to react to on every increment.
 
 ---
 
