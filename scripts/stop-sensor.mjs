@@ -2,6 +2,7 @@
 // Stop, for both runtimes: the cheap sensors, the tests, the mutants, then the design gate.
 import { requestedScope } from './behavior-sensor.mjs';
 import { readHookPayload } from './hook-io.mjs';
+import { stamp } from './sensor-liveness.mjs';
 import { agentTierFires } from './sensor-tier.mjs';
 import { stopAnswer } from './stop-answer.mjs';
 import { verdictFor } from './stop-verdict.mjs';
@@ -22,6 +23,9 @@ const changed = requestedScope([], payload.session_id);
 const verdict = verdictFor(changed);
 
 const answer = stopAnswer(payload, changed, verdict);
+
+// A Stop hook killed mid-run never reaches this line, which is how the doctor sees it.
+stamp('stop');
 
 // systemMessage is not guaranteed to render; stderr is the runtime-agnostic copy.
 if (!answer.decision) process.stderr.write(`${verdict.report}\n`);

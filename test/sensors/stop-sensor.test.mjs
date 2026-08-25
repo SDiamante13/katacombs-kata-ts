@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { stopResponse } from '../../scripts/stop-response.mjs';
+import { lastSeen } from '../../scripts/sensor-liveness.mjs';
 import { fireHook } from './sensor-harness.mjs';
 import { turnProbe } from './turn-fixture.mjs';
 
@@ -87,13 +88,16 @@ describe('what the Stop hook answers', () => {
 describe('the Stop hook against a real turn', () => {
   afterEach(forget);
 
-  it('blocks the agent when the turn left a mutant alive', () => {
+  it('blocks the agent when the turn left a mutant alive, and records that it got that far', () => {
     probe.plant(CAVE, WEAK);
+    rmSync('reports/ledger/.last-stop', { force: true });
 
     const answer = probe.stop();
 
     expect(answer.decision).toBe('block');
     expect(answer.reason).toContain('mutant-survived');
+    // A run killed by the hook timeout never reaches the stamp, which is how it is seen.
+    expect(lastSeen('stop')).not.toBe(null);
   }, 120_000);
 
   it('holds the expensive tier back while the cheap one still has findings', () => {

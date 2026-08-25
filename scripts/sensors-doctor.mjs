@@ -132,6 +132,7 @@ function patience(tight) {
   return [
     `  Stop tier (needs over ${STOP_BUDGET / 1000}s)`,
     ...(lines.length ? lines : ['    both runtimes outlast it  ok']),
+    `    last completed  ${when(lastSeen('stop'))}`,
   ].join('\n');
 }
 
