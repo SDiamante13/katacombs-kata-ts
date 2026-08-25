@@ -19,6 +19,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:sensor": "eslint . --format ./scripts/eslint-sensor-formatter.mjs",
+    "play": "node --disable-warning=ExperimentalWarning src/adapters/terminal/main.ts",
     "prepare": "husky",
     "secret:sensor": "node scripts/gitleaks-sensor.mjs",
     "sensors:doctor": "node scripts/sensors-doctor.mjs",

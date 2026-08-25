@@ -29,6 +29,7 @@ Do not write the same claim twice in a form that cannot fail.
 | [`wet-tests.md`](wet-tests.md)                                             | Why the test rules ask for repetition the duplication sensor would object to                        |
 | [`comments.md`](comments.md)                                               | What a comment is allowed to be here, and which half of that a sensor can check                     |
 | [`design-charter.md`](design-charter.md)                                   | Why the design charter is closed and short, and why each exclusion is an exclusion                  |
+| [`no-build-step.md`](no-build-step.md)                                     | Why the game runs straight from TypeScript, and why every internal import ends in `.ts`             |
 
 Pages are named for what they explain, not numbered. This is not a decision log — a decision record
 is one kind of page here, and feature intent, domain background and hard-won constraints are

@@ -91,6 +91,7 @@ usually shorter than the argument about whether you need it.
 
 ```sh
 npm install
+npm run play      # play the game in your terminal; type ? for the commands, QUIT to leave
 npm run check     # typecheck, secrets, tests, structure, duplication, docs, mutants — what the hooks run
 npm test          # the tests on their own
 npm run behavior:report   # the last mutation run, in a browser, labelled with what it covers
@@ -147,6 +148,10 @@ around worth picking up.
 | `USE <item>`                  | use something you carry, where the world allows it   |
 | `?`                           | list commands                                        |
 | `QUIT`                        | leave                                                |
+
+That table is the finished game. `npm run play` answers the rows built so far — today `GO`, `?` and
+`QUIT` — and tells you it did not understand the rest. [`backlog/`](backlog/README.md) has the order
+the others arrive in; `?` always lists exactly what the build in front of you accepts.
 
 **Treasure.** Gold is collected the first time you enter a location holding it, or open something
 containing it. Your score is the gold you leave with.
