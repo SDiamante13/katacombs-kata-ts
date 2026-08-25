@@ -11,7 +11,9 @@ import { tests as testGuides } from '../../scripts/guides/tests.mjs';
 
 const TAGGED = /```text sensor-output\n([\s\S]*?)```/g;
 const HEADER = /^SENSOR behavior: (PASS|FAIL|SKIP|UNAVAILABLE)\b/;
-const COUNT = /(\d+) (killed|survived|untried|not evaluated)/g;
+// The lookahead drops `1 killed by timeout …`: it re-counts kills, it is not a category.
+const COUNT = /(\d+) (killed|survived|untried|not evaluated)(?! [a-z])/g;
+const TOTAL = /(\d+) mutants/;
 
 const STATUS = {
   killed: 'Killed',
@@ -37,6 +39,16 @@ function mutantsFrom(block) {
   );
 }
 
+function categorised(block) {
+  return [...block.matchAll(COUNT)].reduce((sum, [, count]) => sum + Number(count), 0);
+}
+
+function claimedTotal(block) {
+  const found = TOTAL.exec(block);
+
+  return found ? Number(found[1]) : null;
+}
+
 const blocks = documentedBlocks();
 
 describe('the sensor output printed in SENSORS.md', () => {
@@ -55,6 +67,35 @@ describe('the sensor output printed in SENSORS.md', () => {
     });
 
     expect(findings.length === 0).toBe(outcome === 'PASS');
+  });
+
+  // The total is the one number in the doc an attendee reads and nothing was checking.
+  it.each(blocks)('adds up: every mutant is in exactly one category', (block) => {
+    expect(categorised(block)).toBe(claimedTotal(block));
+  });
+});
+
+describe('the accounting checker itself', () => {
+  const line = (body) => `SENSOR behavior: PASS (0 findings)\n  3 files · ${body}`;
+
+  it('catches a total that does not match its parts', () => {
+    expect(categorised(line('30 mutants · 12 killed · 0 survived · 0 untried'))).not.toBe(
+      30,
+    );
+  });
+
+  it('catches a total invented outright', () => {
+    expect(
+      categorised(line('9999 mutants · 1 killed · 0 survived · 0 untried')),
+    ).not.toBe(9999);
+  });
+
+  it('does not count the timeout clause, which re-counts kills already counted', () => {
+    const block = line(
+      '3 mutants · 3 killed · 0 survived · 0 untried · 1 killed by timeout rather than by a test',
+    );
+
+    expect(categorised(block)).toBe(claimedTotal(block));
   });
 });
 
