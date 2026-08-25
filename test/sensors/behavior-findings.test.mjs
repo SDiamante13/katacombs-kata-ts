@@ -16,19 +16,17 @@ function mutantFor(status, line, mutatorName = 'ConditionalExpression') {
   };
 }
 
+function reportOf(mutants) {
+  return { files: { 'src/cave.ts': { mutants } } };
+}
+
 describe('what it says about a mutation report', () => {
-  const report = {
-    files: {
-      'src/cave.ts': {
-        mutants: [
-          mutantFor('Survived', 2),
-          mutantFor('Killed', 2),
-          mutantFor('NoCoverage', 9),
-          mutantFor('NoCoverage', 9, 'StringLiteral'),
-        ],
-      },
-    },
-  };
+  const report = reportOf([
+    mutantFor('Survived', 2),
+    mutantFor('Killed', 2),
+    mutantFor('NoCoverage', 9),
+    mutantFor('NoCoverage', 9, 'StringLiteral'),
+  ]);
 
   it('reports a survivor at its own line and column', () => {
     const [survivor] = behaviorFindings(report);
@@ -69,18 +67,12 @@ describe('what it says about a mutation report', () => {
 });
 
 describe('the accounting a pass carries', () => {
-  const report = {
-    files: {
-      'src/cave.ts': {
-        mutants: [
-          mutantFor('Killed', 1),
-          mutantFor('Timeout', 2),
-          mutantFor('CompileError', 3),
-          mutantFor('RuntimeError', 4),
-        ],
-      },
-    },
-  };
+  const report = reportOf([
+    mutantFor('Killed', 1),
+    mutantFor('Timeout', 2),
+    mutantFor('CompileError', 3),
+    mutantFor('RuntimeError', 4),
+  ]);
 
   it('counts a timeout as a mutant the tests caught', () => {
     expect(summarise(report)).toContain('2 killed');
@@ -90,17 +82,21 @@ describe('the accounting a pass carries', () => {
     expect(summarise(report)).toContain('2 not evaluated');
   });
 
+  it('says which of the kills were only a clock, not a test', () => {
+    expect(summarise(report)).toContain('1 of those killed by timeout');
+  });
+
+  it('stays quiet about timeouts when there were none', () => {
+    expect(summarise(reportOf([mutantFor('Killed', 1)]))).not.toContain('timeout');
+  });
+
   it('says how many files it looked at', () => {
     expect(summarise(report)).toContain('1 file · 4 mutants');
   });
 });
 
 describe('a mutant a comment told the runner to skip', () => {
-  const report = {
-    files: {
-      'src/cave.ts': { mutants: [mutantFor('Ignored', 7), mutantFor('Ignored', 7)] },
-    },
-  };
+  const report = reportOf([mutantFor('Ignored', 7), mutantFor('Ignored', 7)]);
 
   it('is a finding, not a quiet line in the accounting', () => {
     const [finding] = behaviorFindings(report);
@@ -142,18 +138,12 @@ describe('what it keeps when several tests fail at once', () => {
 });
 
 describe('what survives truncation when one file is very noisy', () => {
-  const noisy = {
-    files: {
-      'src/cave.ts': {
-        mutants: [
-          ...Array.from({ length: 12 }, (_, index) => mutantFor('Survived', index + 1)),
-          mutantFor('NoCoverage', 40),
-          mutantFor('NoCoverage', 41),
-          mutantFor('NoCoverage', 42),
-        ],
-      },
-    },
-  };
+  const noisy = reportOf([
+    ...Array.from({ length: 12 }, (_, index) => mutantFor('Survived', index + 1)),
+    mutantFor('NoCoverage', 40),
+    mutantFor('NoCoverage', 41),
+    mutantFor('NoCoverage', 42),
+  ]);
 
   const written = behaviorReport(behaviorFindings(noisy));
 

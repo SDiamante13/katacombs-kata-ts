@@ -96,8 +96,11 @@ export function summarise(report) {
     `${count(mutants, new Set(['NoCoverage']))} untried`,
   ];
   const unevaluated = count(mutants, NOT_EVALUATED);
+  // A timeout is the one kill the hardware can take back, so it never hides inside the total.
+  const timedOut = count(mutants, new Set(['Timeout']));
 
   if (unevaluated > 0) parts.push(`${unevaluated} not evaluated`);
+  if (timedOut > 0) parts.push(`${timedOut} of those killed by timeout`);
 
   return `  ${parts.join(' · ')}`;
 }
