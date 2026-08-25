@@ -3,6 +3,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { STOP_BUDGET, tooTightToReport } from './hook-budgets.mjs';
 import { deadHooks } from './registered-hooks.mjs';
 import { lastSeen } from './sensor-liveness.mjs';
 
@@ -124,13 +125,29 @@ function registrations(dead) {
   );
 }
 
+// A Stop hook killed mid-run reports nothing, and nothing records that it was killed.
+function patience(tight) {
+  const lines = tight.map((t) => `    ${t.manifest} allows ${t.seconds}s  TOO TIGHT`);
+
+  return [
+    `  Stop tier (needs over ${STOP_BUDGET / 1000}s)`,
+    ...(lines.length ? lines : ['    both runtimes outlast it  ok']),
+  ].join('\n');
+}
+
 function reportOn(states) {
+  const tight = tooTightToReport();
   const dead = deadHooks();
   const broken = states.filter((state) => !state.wired || !state.installed);
-  const body = [...states.map(describe), commitGate(), registrations(dead)].join('\n\n');
+  const body = [
+    ...states.map(describe),
+    commitGate(),
+    registrations(dead),
+    patience(tight),
+  ].join('\n\n');
 
   process.stdout.write(`SENSORS DOCTOR\n\n${body}\n\n`);
-  process.exitCode = broken.length === 0 && dead.length === 0 ? 0 : 1;
+  process.exitCode = broken.length + dead.length + tight.length === 0 ? 0 : 1;
 }
 
 const REFUSAL = [

@@ -25,7 +25,7 @@ export { viewablePath } from './mutation-run.mjs';
 
 const PLAIN = { NO_COLOR: '1', FORCE_COLOR: '0' };
 const MOST_FILES = 25;
-const TEST_BUDGET = 120_000;
+export const TEST_BUDGET = 120_000;
 // Every test skipped exits 0 and asserts nothing, which is not a green suite.
 const ALL_SKIPPED = /Tests\s+(\d+) skipped \(\1\)/;
 

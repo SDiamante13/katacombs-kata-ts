@@ -24,7 +24,7 @@ const strykerBin = path.join(
 const mutationRoot = path.join(projectRoot, 'reports', 'mutation');
 const strykerRoot = path.join(projectRoot, '.stryker-tmp');
 
-const MUTATION_BUDGET = 90_000;
+export const MUTATION_BUDGET = 90_000;
 const runRoot = path.join(mutationRoot, String(process.pid));
 
 export const viewablePath = path.join(mutationRoot, 'mutation.html');

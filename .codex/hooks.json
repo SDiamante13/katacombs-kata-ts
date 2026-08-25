@@ -30,7 +30,7 @@
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/scripts/stop-sensor.mjs\"",
-            "timeout": 120,
+            "timeout": 300,
             "statusMessage": "Running the tests, then mutating what changed"
           }
         ]
