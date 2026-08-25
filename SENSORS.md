@@ -243,9 +243,14 @@ SENSOR behavior: PASS (0 findings)
 A pass has nothing surviving and nothing untried by construction — either would be a finding. The
 line is there so you can see the _size_ of the check that passed.
 
-Timeouts count as killed — a mutant that hangs the suite was detected by it. Mutants that could not
-be evaluated at all (a mutation that does not compile, a crash in the runner) are counted separately
-as `not evaluated`, because "we could not try" is not "we tried and it was fine".
+Timeouts count as killed — a mutant that hangs the suite was detected by it. But a timeout is the
+one kill the environment can take back: a faster machine, a warmer cache or a longer mutation budget
+can turn the same mutant into a survivor. So the count stays as it is, and the line names them
+rather than letting them hide inside the total — `1 killed by timeout rather than by a test`. A
+green carrying one of those is worth slightly less than a green without, and you cannot tell from
+the number alone. Mutants that could not be evaluated at all (a mutation that does not compile, a
+crash in the runner) are counted separately as `not evaluated`, because "we could not try" is not
+"we tried and it was fine".
 
 `UNAVAILABLE` is the same rule the secret sensor follows: **a sensor that cannot run must never
 report green.**

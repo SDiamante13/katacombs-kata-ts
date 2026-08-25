@@ -44,7 +44,7 @@ describe('what it says about a mutation report', () => {
   });
 
   it('says nothing when every mutant died', () => {
-    expect(behaviorFindings({ files: { 'src/cave.ts': { mutants: [] } } })).toEqual([]);
+    expect(behaviorFindings(reportOf([]))).toEqual([]);
   });
 
   it('coaches the first finding of a kind and points the rest at it', () => {
@@ -82,8 +82,10 @@ describe('the accounting a pass carries', () => {
     expect(summarise(report)).toContain('2 not evaluated');
   });
 
-  it('says which of the kills were only a clock, not a test', () => {
-    expect(summarise(report)).toContain('1 of those killed by timeout');
+  it('reads as one sentence, with every count next to the word it counts', () => {
+    expect(summarise(report)).toBe(
+      '  1 file · 4 mutants · 2 killed · 0 survived · 0 untried · 2 not evaluated · 1 killed by timeout rather than by a test',
+    );
   });
 
   it('stays quiet about timeouts when there were none', () => {

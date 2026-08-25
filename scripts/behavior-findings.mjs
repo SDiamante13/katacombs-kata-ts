@@ -100,7 +100,7 @@ export function summarise(report) {
   const timedOut = count(mutants, new Set(['Timeout']));
 
   if (unevaluated > 0) parts.push(`${unevaluated} not evaluated`);
-  if (timedOut > 0) parts.push(`${timedOut} of those killed by timeout`);
+  if (timedOut > 0) parts.push(`${timedOut} killed by timeout rather than by a test`);
 
   return `  ${parts.join(' · ')}`;
 }
