@@ -1,0 +1,1622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Coding Agent Code Quality Workshop: Quality Sensors for Agents</title>
+<link rel="stylesheet" href="vendor/asciinema-player.css">
+<style>
+/* ---------- fonts, vendored so the deck needs no network ---------- */
+@font-face{font-family:Playfair;src:url(fonts/playfair-display-latin-700-normal.woff2) format('woff2');font-weight:700;font-display:block}
+@font-face{font-family:Playfair;src:url(fonts/playfair-display-latin-500-normal.woff2) format('woff2');font-weight:500;font-display:block}
+@font-face{font-family:InterD;src:url(fonts/inter-latin-400-normal.woff2) format('woff2');font-weight:400;font-display:block}
+@font-face{font-family:InterD;src:url(fonts/inter-latin-600-normal.woff2) format('woff2');font-weight:600;font-display:block}
+@font-face{font-family:JBMono;src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format('woff2');font-weight:400;font-display:block}
+@font-face{font-family:JBMono;src:url(fonts/jetbrains-mono-latin-600-normal.woff2) format('woff2');font-weight:600;font-display:block}
+
+/* ---------- brand ---------- */
+:root{
+  --navy:#174a8f;
+  --sky:#76B4F0;
+  --ink:#333232;
+  --cream:#F5F1EA;
+  --cream-2:#EDE7DC;
+  --muted:#6b6a69;
+  --serif:Playfair,Georgia,'Times New Roman',serif;
+  --sans:InterD,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  --mono:JBMono,ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --W:1280px; --H:720px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#111;overflow:hidden}
+body{font-family:var(--sans);color:var(--ink)}
+
+/* ---------- stage: fixed design size, scaled to the viewport ---------- */
+#stage{position:absolute;inset:0;display:grid;place-items:center}
+#deck{width:var(--W);height:var(--H);position:relative;transform-origin:center center}
+.slide{
+  position:absolute;inset:0;padding:64px 72px;
+  display:none;flex-direction:column;justify-content:center;
+  background:var(--cream);
+}
+.slide.on{display:flex}
+
+/* ---------- three slide modes ---------- */
+.slide.dark{background:var(--ink);color:var(--cream)}
+.slide.dark .eyebrow{color:var(--sky)}
+.slide.divider{background:var(--sky);color:var(--ink)}
+.slide.divider .eyebrow{color:var(--ink);opacity:.65}
+
+/* ---------- type ---------- */
+.eyebrow{
+  font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--navy);margin:0 0 26px;
+}
+h1{font-family:var(--serif);font-weight:700;font-size:76px;line-height:1.04;letter-spacing:-.015em;margin:0}
+h2{font-family:var(--serif);font-weight:700;font-size:52px;line-height:1.12;letter-spacing:-.01em;margin:0}
+h3{font-family:var(--serif);font-weight:700;font-size:30px;line-height:1.2;margin:0 0 10px}
+.lede{font-size:25px;line-height:1.5;color:var(--muted);max-width:22ch;margin:26px 0 0}
+.slide.dark .lede{color:#bfbcb8}
+.slide.divider .lede{color:#20406b;max-width:26ch}
+p.body{font-size:22px;line-height:1.55;max-width:34ch;margin:22px 0 0}
+.big{font-family:var(--serif);font-weight:700;font-size:190px;line-height:.9;letter-spacing:-.03em}
+/* line-height .9 means a 190px glyph in a 171px box: it paints ~10px below its own
+   bottom edge. Fine in a .split column where nothing follows, but on the sensor
+   dividers the h2 sits flush underneath and the numeral lands on top of it. */
+.slide.divider .big{line-height:1;margin-bottom:20px}
+.accent{color:var(--navy)}
+.slide.dark .accent{color:var(--sky)}
+blockquote{
+  margin:0;font-family:var(--serif);font-weight:500;font-size:46px;line-height:1.28;
+  font-style:italic;max-width:20ch;
+}
+.attrib{font-family:var(--mono);font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:30px}
+.slide.dark .attrib{color:#95918c}
+
+/* ---------- layouts ---------- */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;height:100%}
+.split.wide-right{grid-template-columns:.85fr 1.15fr}
+.stack{display:flex;flex-direction:column;justify-content:center;height:100%}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:38px}
+.card{border:1px solid rgba(51,50,50,.22);padding:22px 20px;min-height:190px}
+.slide.dark .card{border-color:rgba(245,241,234,.25)}
+.card .n{
+  font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.14em;
+  color:var(--navy);margin-bottom:14px;
+}
+.slide.dark .card .n{color:var(--sky)}
+.card p{font-size:17px;line-height:1.45;margin:0;color:var(--muted)}
+.slide.dark .card p{color:#bfbcb8}
+.rule{height:3px;width:76px;background:var(--navy);margin:0 0 30px}
+.slide.dark .rule{background:var(--sky)}
+.slide.divider .rule{background:var(--ink)}
+
+/* ---------- code ---------- */
+pre.code{
+  background:#2b2a2a;border-left:3px solid var(--sky);border-radius:4px;
+  padding:20px 22px;margin:0;overflow:hidden;
+  font-family:var(--mono);font-size:16px;line-height:1.65;color:#e8e4de;
+}
+pre.code .c{color:#8d8a86}
+pre.code .k{color:var(--sky)}
+
+/* ---------- asciinema ---------- */
+.cast{width:100%;border:1px solid rgba(51,50,50,.2);border-radius:4px;overflow:hidden;background:#15191e}
+.slide.dark .cast{border-color:rgba(245,241,234,.2)}
+.ap-player{font-size:13px}
+.caption{font-family:var(--mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:14px}
+
+/* ---------- tables: comparison only, never a data dump ---------- */
+table{border-collapse:collapse;width:100%;margin-top:34px;font-size:21px}
+th{
+  text-align:left;padding:10px 0;font-family:var(--mono);font-size:13px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--navy);
+  border-bottom:1px solid rgba(51,50,50,.25);
+}
+td{padding:15px 0;border-bottom:1px solid rgba(51,50,50,.14);vertical-align:baseline}
+td.num{font-family:var(--serif);font-weight:700;font-size:34px;text-align:right;width:5.5em}
+tr:last-child td{border-bottom:none}
+.slide.dark th{color:var(--sky);border-bottom-color:rgba(245,241,234,.3)}
+.slide.dark td{border-bottom-color:rgba(245,241,234,.16)}
+.foot{font-family:var(--mono);font-size:13px;letter-spacing:.06em;color:var(--muted);margin:26px 0 0}
+.slide.dark .foot{color:#95918c}
+
+/* ---------- callout: one aside that must not read as body text ---------- */
+.callout{
+  border-left:3px solid var(--navy);background:rgba(23,74,143,.06);
+  padding:14px 18px;margin:26px 0 0;font-size:18px;line-height:1.5;max-width:46ch;
+}
+.callout b{
+  display:block;margin-bottom:6px;font-family:var(--mono);font-size:12px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--navy);
+}
+.slide.dark .callout{border-left-color:var(--sky);background:rgba(118,180,240,.09)}
+.slide.dark .callout b{color:var(--sky)}
+
+/* ---------- nested-zone diagram ---------- */
+.hex{border:1px solid rgba(51,50,50,.3);padding:16px;margin-top:10px}
+.hex .zone{font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--navy);margin-bottom:4px}
+.hex .what{font-size:16px;color:var(--muted);margin:0 0 12px}
+.hex .hex{margin-top:0}
+.hex.core{background:rgba(23,74,143,.07);border-color:var(--navy)}
+.hex.core .zone{color:var(--navy)}
+.hex.core .what{color:var(--ink)}
+.inward{font-family:var(--mono);font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--navy);margin:18px 0 0;text-align:center}
+
+/* ---------- screenshots: always light-mode captures, so cream slides only ---------- */
+.shot{
+  display:block;width:100%;height:auto;
+  border:1px solid rgba(51,50,50,.18);border-radius:4px;
+}
+.slide.dark .shot{border-color:rgba(245,241,234,.22)}
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start;margin-top:10px}
+.shots figure{margin:0}
+.shots figcaption,.shot-label{
+  font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--navy);margin:0 0 8px;
+}
+.shots figure.after figcaption{color:#2f6a3f}
+
+/* ---------- diagrams: inline SVG, readable on cream and dark ---------- */
+.dg{display:block;width:100%;height:auto;color:var(--ink);overflow:visible}
+.slide.dark .dg,.dark .dg{color:var(--cream)}
+.dg-label{font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;fill:currentColor}
+.dg-num{font-family:var(--serif);font-weight:700;font-size:34px;fill:currentColor}
+.dg-body{font-family:var(--sans);font-size:16px;fill:currentColor}
+.dg-accent{fill:var(--navy)}
+.dg-fill-accent{fill:var(--navy)}
+.dg-accent-stroke{stroke:var(--navy);fill:none}
+.slide.dark .dg-accent,.dark .dg-accent,
+.slide.dark .dg-fill-accent,.dark .dg-fill-accent{fill:var(--sky)}
+.slide.dark .dg-accent-stroke,.dark .dg-accent-stroke{stroke:var(--sky)}
+.dg-invert text{fill:var(--cream)}
+.slide.dark .dg-invert text,.dark .dg-invert text{fill:var(--ink)}
+.dg-arrowhead{fill:var(--ink)}
+/* a diagram takes the slot a picture would; in a stack it needs air above it */
+.stack > .dg{margin-top:36px}
+.slide.dark .dg-arrowhead,.dark .dg-arrowhead{fill:var(--cream)}
+
+/* ---------- chrome ---------- */
+#hud{
+  position:fixed;right:18px;bottom:14px;font-family:var(--mono);font-size:12px;
+  letter-spacing:.12em;color:rgba(255,255,255,.45);z-index:20;
+}
+.brandmark{
+  position:absolute;left:72px;bottom:40px;font-family:var(--mono);font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--muted);opacity:.85;
+}
+.slide.dark .brandmark{color:#8b8783}
+.slide.divider .brandmark{color:#20406b}
+
+/* ---------- overview: every slide at once, press O ---------- */
+#ov{
+  position:fixed;inset:0;z-index:40;display:none;overflow-y:auto;
+  background:var(--cream-2);padding:34px 30px 60px;
+}
+#ov.on{display:block}
+#ov .ovhead{
+  font-family:var(--mono);font-size:13px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 22px;
+}
+#ovgrid{display:grid;grid-template-columns:repeat(auto-fill,208px);gap:26px 20px;justify-content:center}
+.ovcell{cursor:pointer;border:0;background:none;padding:0;font:inherit;text-align:left}
+.ovthumb{
+  width:208px;height:117px;overflow:hidden;position:relative;
+  border:1px solid rgba(51,50,50,.22);background:var(--cream);
+}
+.ovcell:hover .ovthumb{border-color:var(--navy)}
+.ovcell.sel .ovthumb{border-color:var(--navy);box-shadow:0 0 0 3px var(--navy)}
+.ovthumb > .slide{
+  display:flex !important;position:absolute;top:0;left:0;
+  width:1280px;height:720px;transform:scale(.1625);transform-origin:0 0;
+}
+.ovthumb .brandmark,.ovthumb .caption{display:none}
+.ovnum{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--muted);
+  margin-top:7px;display:block;
+}
+.ovcell.sel .ovnum{color:var(--navy);font-weight:600}
+
+/* ---------- print: one slide per landscape page ---------- */
+@media print{
+  @page{size:1280px 720px;margin:0}
+  html,body{overflow:visible;background:#fff;height:auto}
+  #stage{position:static;display:block}
+  #deck{transform:none!important;width:1280px;height:auto}
+  .slide{display:flex!important;position:relative;inset:auto;width:1280px;height:720px;page-break-after:always;break-after:page}
+  #hud{display:none}
+}
+</style>
+</head>
+<body>
+
+<div id="stage"><div id="deck">
+
+<!-- ============ 1 · title ============ -->
+
+<!-- ================= beat-0 ================= -->
+<section class="slide dark">
+  <div class="split">
+    <div>
+      <p class="eyebrow">AI Coding Agent Code Quality Workshop</p>
+      <h1>Quality Sensors<br>for Agents</h1>
+      <p class="lede">Structural, behavioral and design feedback — while the agent is still working.</p>
+    </div>
+    <div>
+      <img class="shot" src="media/sensor.jpg" alt="A pulse oximeter clipped to a finger, showing a live reading">
+    </div>
+  </div>
+  <div class="brandmark">Steven Diamante · Packt · 28 August 2026</div>
+</section>
+
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">What you can wire into the codebase you already have</p>
+    <h2>Three sensors, each watching<br>something the others can’t see.</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="n">01 · STRUCTURAL</div>
+        <p>Fires after every edit. Long functions, deep nesting, duplication — caught in milliseconds.</p>
+      </div>
+      <div class="card">
+        <div class="n">02 · BEHAVIORAL</div>
+        <p>Fires when the agent stops. Finds tests that pass but would never notice a bug.</p>
+      </div>
+      <div class="card">
+        <div class="n">03 · DESIGN</div>
+        <p>Fires once a session. Finds misplaced responsibilities and names that lie.</p>
+      </div>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 0.4 · Beck on habits, and the turn: an agent cannot form one, so the loop comes from outside -->
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">The premise</p>
+      <blockquote>I'm not a great developer. I'm a good developer with great habits.</blockquote>
+      <p class="attrib">Kent Beck</p>
+    </div>
+    <div>
+      <div class="rule"></div>
+      <h3>A habit is what you fall back on</h3>
+      <p class="body">while concentrating on something else. It fires without deciding to fire.</p>
+      <p class="body"><strong>An agent cannot form one.</strong> Every session starts from nothing.</p>
+      <p class="body"><strong>So the loop has to arrive from outside.</strong></p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">The consequence</p>
+      <h3>So the loop has to<br>arrive from outside —</h3>
+      <h2 class="accent">a sensor.</h2>
+      <p class="body">A fast, deterministic check that <strong>detects</strong> a problem, <strong>coaches</strong> a fix, and is <strong>triggered</strong> automatically.</p>
+      <p class="attrib">Birgitta Böckeler · Maintainability sensors for coding agents</p>
+    </div>
+    <div>
+      <img class="shot" src="media/sensor-gauge.png" style="border:none;max-height:420px;width:auto;margin:0 auto"
+           alt="A minimal circular gauge with a single needle">
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+<!-- ================= beat-1-2 ================= -->
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">Martin Fowler &middot; Design Stamina Hypothesis</p>
+    <h2>Neglect the design, and every feature<br>costs more than the one before it.</h2>
+    <svg class="dg" viewBox="0 0 1136 320" role="img" aria-label="Cost of the next change rising with functionality delivered, with and without design">
+  <g stroke="currentColor" stroke-width="1.5" opacity=".45">
+    <line x1="84" y1="282.9" x2="1112" y2="282.9"/><line x1="84" y1="282.9" x2="84" y2="21.9"/>
+  </g>
+  <g class="dg-label" opacity=".7">
+    <text x="84" y="308.2">FUNCTIONALITY DELIVERED</text>
+    <text x="84" y="15.2">COST OF THE NEXT CHANGE</text>
+  </g>
+
+  <!-- no design: cheap to start, then every feature costs more than the one before -->
+  <path d="M 84 269.5C 300 262.7 470 249.3 640 198.7C 800 151.6 950 80.8 1112 25.3"
+        fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="8 7" opacity=".6"/>
+  <!-- with design: a little more up front, then flat -->
+  <path d="M 84 245.9C 330 239.2 570 234.9 800 233.3C 950 232.4 1030 231.6 1112 230.7"
+        fill="none" class="dg-accent-stroke" stroke-width="3"/>
+
+  <g class="dg-label">
+    <text x="1000" y="128" text-anchor="middle" opacity=".65">NO DESIGN</text>
+    <text x="1112" y="212.2" text-anchor="end" class="dg-accent">WITH DESIGN</text>
+  </g>
+
+  <line x1="474" y1="50.5" x2="474" y2="282.9" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 6" opacity=".38"/>
+  <circle cx="474" cy="237.5" r="6" class="dg-fill-accent"/>
+  <text class="dg-label" x="474" y="43.8" text-anchor="middle" opacity=".8">THE PAYOFF LINE</text>
+  <text class="dg-body" x="112" y="72.4" opacity=".75">Agents write faster, so this line arrives sooner.</text>
+</svg>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 1.9 · Edwards-Alexander's unreviewed agent-written app: 17,155 lines in one file -->
+<section class="slide">
+  <div class="stack">
+    <div class="split" style="height:auto">
+      <div>
+        <p class="eyebrow">Giles Edwards-Alexander · one file, in one working app</p>
+        <div class="big">17,155</div>
+      </div>
+      <div>
+        <div class="rule"></div>
+        <h3>lines of Rust,<br>in a single file.</h3>
+        <p class="body">150,000 lines, written entirely by agents. He never reviewed the code.</p>
+      </div>
+    </div>
+    <p class="foot">martinfowler.com/articles/exploring-gen-ai/refactoring-economic-benefit.html</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 1.11 · The refactoring experiment: 83% fewer input tokens for the same change -->
+<section class="slide dark">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Same change, same codebase size</p>
+      <div class="big">83<span class="accent">%</span></div>
+      <h3 style="margin-top:18px">fewer input tokens.</h3>
+      <p class="foot">Measured on code that had already gone wrong, then organized — the legacy case, not the greenfield one.</p>
+    </div>
+    <div>
+      <svg class="dg" viewBox="0 0 560 440" role="img" aria-label="Input tokens fall across fifteen refactoring steps, and what that change costs on Sonnet 5 and Opus 5">
+  <text class="dg-label" x="0" y="20" opacity=".7">INPUT TOKENS FOR THE IDENTICAL CHANGE</text>
+
+  <g stroke="currentColor" stroke-width="1.5" opacity=".45">
+    <line x1="64" y1="282" x2="548" y2="282"/><line x1="64" y1="282" x2="64" y2="48"/>
+  </g>
+  <path d="M64 74 C 150 78, 226 86, 288 100 C 340 112, 372 162, 412 218 C 448 256, 490 270, 548 276"
+        fill="none" class="dg-accent-stroke" stroke-width="3"/>
+  <line x1="300" y1="48" x2="300" y2="282" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 6" opacity=".38"/>
+
+  <g class="dg-num" style="font-size:26px">
+    <text x="78" y="62">159,564</text>
+    <text x="548" y="252" text-anchor="end" class="dg-accent">27,360</text>
+  </g>
+  <g class="dg-label" opacity=".7">
+    <text x="64" y="308">STEP 1</text>
+    <text x="548" y="308" text-anchor="end">STEP 15</text>
+  </g>
+
+  <line x1="0" y1="338" x2="560" y2="338" stroke="currentColor" stroke-width="1.5" opacity=".3"/>
+
+  <text class="dg-label" x="0" y="374" opacity=".7">SONNET 5</text>
+  <g class="dg-num" style="font-size:26px">
+    <text x="190" y="382">48&#162;</text>
+    <text x="270" y="382" opacity=".5" style="font-size:20px">&#8594;</text>
+    <text x="316" y="382" class="dg-accent">8&#162;</text>
+  </g>
+
+  <text class="dg-label" x="0" y="424" opacity=".7">OPUS 5</text>
+  <g class="dg-num" style="font-size:26px">
+    <text x="190" y="432">80&#162;</text>
+    <text x="270" y="432" opacity=".5" style="font-size:20px">&#8594;</text>
+    <text x="316" y="432" class="dg-accent">14&#162;</text>
+  </g>
+</svg>
+      <p class="foot">List price, Aug 2026: $3 per million input tokens on Sonnet 5, $5 on Opus 5.<br>Giles Edwards-Alexander's measured tokens, my arithmetic.</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Ivett &Ouml;rd&ouml;g &middot; habit-hooks</p>
+      <h3>Strict linting rules alone<br>don't lead to well<br>designed software.</h3>
+      <p class="body">The agent must understand the <strong>why</strong> behind the linting error.</p>
+    </div>
+    <div>
+<pre class="code"><span class="c">// everything the agent was told:</span>
+<span class="k">"max-lines exceeded"</span>
+
+<span class="c">// what came back:</span>
+function buildLinesAndTotal(items) {
+  ...
+}
+
+<span class="c">// the "and" is the confession</span></pre>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 1.15 · Suoniemi's measured result: naming the metric did worse than saying nothing -->
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">Liina Suoniemi &middot; pre-registered, independently scored</p>
+    <h2>On the stronger model, naming the metric<br>did worse than saying nothing.</h2>
+    <svg class="dg" viewBox="0 0 1136 232" role="img" aria-label="Genuine fixes by wording: say nothing 26.7 percent, state the metric 11.1 percent, explain the metric 77.8 percent">
+  <g class="dg-label" opacity=".7">
+    <text x="0" y="18">SAY NOTHING SPECIFIC &#8212; &#8220;IMPROVE THIS CODE&#8221;</text>
+    <text x="0" y="98">STATE THE METRIC &#8212; &#8220;COMPLEXITY 11 &gt; 5&#8221;</text>
+    <text x="0" y="178">EXPLAIN WHAT THE METRIC MEANS</text>
+  </g>
+  <rect x="0" y="28" width="245" height="36" fill="currentColor" opacity=".3"/>
+  <rect x="0" y="108" width="102" height="36" fill="currentColor" opacity=".3"/>
+  <rect x="0" y="188" width="715" height="36" class="dg-fill-accent"/>
+  <g class="dg-num" style="font-size:30px">
+    <text x="269" y="56">26.7%</text>
+    <text x="126" y="136">11.1%</text>
+    <text x="739" y="216" class="dg-accent">77.8%</text>
+  </g>
+</svg>
+    <p class="foot">Sonnet, complexity smell &middot; 9 functions, 5 trials, 45 per condition &middot; blind human check agreed on 81% of complexity cases &mdash; and every disagreement in the study was a complexity case where the human was <em>stricter</em> than the judge &middot; github.com/LiinaSuoniemi/prompt-vs-metric-eval</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Suoniemi &middot; the same study</p>
+      <div class="rule"></div>
+      <h2>The stronger model<br>gamed it harder.</h2>
+      <p class="lede">Same smell, same bare metric. Sonnet gamed it on <strong>75.6%</strong> of trials. Haiku, <strong>31.1%</strong>.</p>
+      <p class="foot">Naming the metric multiplied gaming on both models &mdash; 6.8&times; on Sonnet, 14&times; on Haiku.<br>Two models, so a signal, not a law.</p>
+    </div>
+    <div>
+      <img class="shot" src="media/gamed-the-metric.png" style="border:none"
+           alt="A robot hand nudging the needle of a dial across to the far side">
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 2.8 · What a coached finding actually looks like when it reaches the agent -->
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">What the agent actually receives</p>
+      <h3>Ship the reason<br>with the error.</h3>
+      <p class="body">A threshold on its own is a number to push down. The same finding, carrying two sentences of why and how, is a refactoring brief.</p>
+      <p class="body"><strong>Same tool. Same trigger.</strong> The difference is what the message says.</p>
+    </div>
+    <div>
+<pre class="code"><span class="c">complexity 11 (max 5)</span>
+<span class="c">src/domain/scoring.ts:42</span>
+
+<span class="k">WHY</span>  Eleven branches is more than a
+     reader holds at once, so the next
+     change lands in the wrong one.
+
+<span class="k">HOW</span>  Name each decision. Pull each
+     branch body into a function whose
+     name says what it decides.
+
+     <span class="c">Splitting it in half will not help.</span></pre>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+<!-- ================= beat-3 ================= -->
+<section class="slide divider">
+  <div class="stack">
+    <p class="eyebrow">How a sensor works</p>
+    <div class="rule"></div>
+    <h2>Anatomy of a sensor</h2>
+    <p class="lede">By the end of this section, one is running unprompted against a real codebase.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">Three parts</p>
+    <h2>DETECT → COACH → TRIGGER</h2>
+    <svg class="dg" viewBox="0 0 1136 340" role="img" aria-label="Detect, coach, trigger — and how each fails when skipped">
+  <defs><marker id="dct-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path class="dg-arrowhead" d="M0 0 L10 5 L0 10 z"/></marker></defs>
+  <g class="dg-box">
+    <rect x="0"   y="40" width="300" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="418" y="40" width="300" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="836" y="40" width="300" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  </g>
+  <g stroke="currentColor" stroke-width="1.5" marker-end="url(#dct-a)" opacity=".55">
+    <line x1="322" y1="110" x2="404" y2="110"/>
+    <line x1="740" y1="110" x2="822" y2="110"/>
+  </g>
+  <g class="dg-num" text-anchor="middle">
+    <text x="150"  y="98">DETECT</text>
+    <text x="568"  y="98">COACH</text>
+    <text x="986"  y="98">TRIGGER</text>
+  </g>
+  <g class="dg-body" text-anchor="middle">
+    <text x="150" y="140">what notices?</text>
+    <text x="568" y="140">what does it say?</text>
+    <text x="986" y="140">what makes it run?</text>
+  </g>
+  <g class="dg-label" text-anchor="middle" opacity=".75">
+    <text x="150" y="230">SKIP IT AND</text>
+    <text x="568" y="230">SKIP IT AND</text>
+    <text x="986" y="230">SKIP IT AND</text>
+  </g>
+  <g class="dg-body" text-anchor="middle">
+    <text x="150" y="262">nothing tells you the code<tspan x="150" dy="24">is drifting</tspan></text>
+    <text x="568" y="262">the agent games the number<tspan x="568" dy="24">and destroys the evidence</tspan></text>
+    <text x="986" y="262">the check exists and<tspan x="986" dy="24">nobody runs it</tspan></text>
+  </g>
+</svg>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="split">
+    <div>
+      <p class="eyebrow">The thesis</p>
+      <h2>The guide is not the loop.<br>The hook is <span class="accent">the loop</span>.</h2>
+    </div>
+    <div>
+      <svg class="dg" viewBox="0 0 560 452" role="img" aria-label="A sensor wired into the agent's own loop">
+  <defs><marker id="loop-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path class="dg-arrowhead" d="M0 0 L10 5 L0 10 z"/></marker></defs>
+  <rect x="120" y="228" width="440" height="84" class="dg-fill-accent" opacity=".13"/>
+  <g fill="none" stroke="currentColor" stroke-width="1.5">
+    <rect x="120" y="0"   width="440" height="84"/>
+    <rect x="120" y="114" width="440" height="84"/>
+    <rect x="120" y="228" width="440" height="84"/>
+    <rect x="120" y="342" width="440" height="84"/>
+  </g>
+  <g class="dg-num">
+    <text x="146" y="44">The agent edits a file</text>
+    <text x="146" y="158">A hook fires</text>
+    <text x="146" y="272">The sensor finds it</text>
+    <text x="146" y="386">The agent fixes it</text>
+  </g>
+  <g class="dg-body" opacity=".7">
+    <text x="146" y="70">it does not have to be told to</text>
+    <text x="146" y="184">before the turn can end</text>
+    <text x="146" y="298">and explains what the smell stands in for</text>
+    <text x="146" y="412">in this turn, while the context is still hot</text>
+  </g>
+  <g stroke="currentColor" stroke-width="1.5" marker-end="url(#loop-a)" opacity=".55">
+    <line x1="340" y1="88"  x2="340" y2="108"/>
+    <line x1="340" y1="202" x2="340" y2="222"/>
+    <line x1="340" y1="316" x2="340" y2="336"/>
+  </g>
+  <path d="M120 384 H 44 V 42 H 112" fill="none" stroke="currentColor" stroke-width="1.5"
+        marker-end="url(#loop-a)" opacity=".55"/>
+  <text class="dg-label" x="22" y="213" opacity=".75" transform="rotate(-90 22 213)" text-anchor="middle">NO HUMAN IN THIS LOOP</text>
+</svg>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Trigger tiers · strongest first</p>
+      <h3>No hooks in your agent? You still get two and three.</h3>
+    </div>
+    <div>
+      <svg class="dg" viewBox="0 0 560 440" role="img" aria-label="Three trigger tiers, weakest last">
+  <g class="dg-label"><text x="0" y="20" opacity=".75">STRONGEST</text></g>
+  <rect x="0" y="40" width="560" height="98" class="dg-fill-accent"/>
+  <g class="dg-invert">
+    <text class="dg-num" x="24" y="86">Agent-native hooks</text>
+    <text class="dg-body" x="24" y="116">Fires whether or not anyone asked. Can block.</text>
+  </g>
+  <rect x="0" y="158" width="480" height="98" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text class="dg-num" x="24" y="204">Git hooks</text>
+  <text class="dg-body" x="24" y="234">Fires at commit. Skippable with --no-verify.</text>
+  <rect x="0" y="276" width="400" height="98" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="7 6" opacity=".6"/>
+  <text class="dg-num" x="24" y="322" opacity=".6">An instruction file</text>
+  <text class="dg-body" x="24" y="352" opacity=".6">Fires if the agent remembers. Usually it doesn't.</text>
+  <g class="dg-label"><text x="0" y="410" opacity=".75">WEAKEST</text></g>
+</svg>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 3.4a · the rollout question — one config file, hook calls it early, CI calls it last -->
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">The rollout question</p>
+      <h3>What about the developer<br>who never installs the hook?</h3>
+      <p class="lede">Some machines will have it, some will not, and the check cannot depend on which.</p>
+    </div>
+    <div>
+      <div class="rule"></div>
+      <h3>CI is the backstop.</h3>
+      <p class="body">The same lint, duplication and mutation commands run on the pull request. An unhooked machine cannot land unhooked code.</p>
+      <p class="body"><strong>One config file, two callers</strong> &mdash; the hook runs it early, CI runs it last.</p>
+      <div class="callout"><b>If you are on npm</b>husky installs the hook on <code>npm install</code>, so there is no unhooked machine to worry about. Other ecosystems have no equivalent — there, CI is not a backstop, it is the only guarantee.</div>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">Before we go tier by tier</p>
+    <h2>One feature, all the way through.</h2>
+    <svg class="dg" viewBox="0 0 1136 330" role="img" aria-label="One feature going in: structural fires at every edit, behavioral when the turn ends, design once the session is green, and only then does a human read it">
+  <defs><marker id="fe-tip" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+    <path d="M0 0 L10 5 L0 10 z" class="dg-arrowhead"/></marker></defs>
+
+  <text class="dg-label" x="0" y="23.1" opacity=".7">ONE FEATURE GOES IN</text>
+  <text class="dg-label" x="1136" y="23.1" text-anchor="end" opacity=".7">A HUMAN READS IT</text>
+
+  <line x1="0" y1="85.8" x2="1112" y2="85.8" stroke="currentColor" stroke-width="2.5" marker-end="url(#fe-tip)"/>
+
+  <!-- every edit the agent makes -->
+  <g stroke="currentColor" stroke-width="2.5" opacity=".8">
+    <line x1="40" y1="72.6" x2="40" y2="99"/><line x1="100" y1="72.6" x2="100" y2="99"/>
+    <line x1="160" y1="72.6" x2="160" y2="99"/><line x1="220" y1="72.6" x2="220" y2="99"/>
+    <line x1="280" y1="72.6" x2="280" y2="99"/><line x1="340" y1="72.6" x2="340" y2="99"/>
+    <line x1="400" y1="72.6" x2="400" y2="99"/><line x1="460" y1="72.6" x2="460" y2="99"/>
+    <line x1="640" y1="72.6" x2="640" y2="99"/><line x1="700" y1="72.6" x2="700" y2="99"/>
+    <line x1="760" y1="72.6" x2="760" y2="99"/><line x1="820" y1="72.6" x2="820" y2="99"/>
+  </g>
+  <!-- structural fires under every one of them -->
+  <g class="dg-fill-accent">
+    <circle cx="40" cy="120.4" r="5"/><circle cx="100" cy="120.4" r="5"/><circle cx="160" cy="120.4" r="5"/>
+    <circle cx="220" cy="120.4" r="5"/><circle cx="280" cy="120.4" r="5"/><circle cx="340" cy="120.4" r="5"/>
+    <circle cx="400" cy="120.4" r="5"/><circle cx="460" cy="120.4" r="5"/>
+    <circle cx="640" cy="120.4" r="5"/><circle cx="700" cy="120.4" r="5"/><circle cx="760" cy="120.4" r="5"/>
+    <circle cx="820" cy="120.4" r="5"/>
+  </g>
+  <text class="dg-label dg-accent" x="0" y="151.8">STRUCTURAL &#183; EVERY EDIT</text>
+
+  <!-- the turn boundary -->
+  <line x1="540" y1="49.5" x2="540" y2="217.8" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 6" opacity=".45"/>
+  <circle cx="540" cy="85.8" r="7" class="dg-fill-accent"/>
+  <text class="dg-label dg-accent" x="556" y="201.3">BEHAVIORAL &#183; EVERY TURN</text>
+
+  <!-- the session boundary -->
+  <line x1="900" y1="49.5" x2="900" y2="267.3" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 6" opacity=".45"/>
+  <circle cx="900" cy="85.8" r="7" class="dg-fill-accent"/>
+  <text class="dg-label dg-accent" x="916" y="250.8">DESIGN &#183; ONCE A SESSION</text>
+
+  <text class="dg-body" x="0" y="310.2" opacity=".75">Milliseconds, then seconds, then dollars. Nobody had to remember to run any of them.</text>
+</svg>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="stack">
+    <p class="eyebrow">The same thing, actually running</p>
+    <h3>A feature goes in. Every sensor fires.</h3>
+    <div class="cast" id="cast-end-to-end"></div>
+    <p class="caption">end-to-end.cast · one feature, TDD hook, every tier firing unprompted</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+<!-- ================= beat-4-6 ================= -->
+<section class="slide divider">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Sensor 1 of 3</p>
+      <div class="big">1</div>
+      <h2>Structural</h2>
+      <p class="lede">Length, depth, complexity, duplication. The cheapest sensor you will ever own.</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="stack">
+    <div class="rule"></div>
+    <p class="eyebrow">The principle</p>
+    <h2>Fix what's mechanical.<br><span class="accent">Coach</span> what's judgment.</h2>
+    <p class="lede">Prettier goes first and says nothing. Formatting is never a finding.</p>
+    <p class="body">Attention spent on a semicolon is attention not spent on the design.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">The rule set</p>
+      <h3>Six numbers the agent<br>has to live inside.</h3>
+      <p class="body">A bar that fires the moment a function outgrows a single idea.</p>
+    </div>
+    <div>
+<pre class="code"><span class="c">// eslint.config.mjs</span>
+<span class="k">'max-lines-per-function'</span>: 25
+<span class="k">'max-lines'</span>:              150
+<span class="k">'complexity'</span>:              5
+<span class="k">'max-params'</span>:              4
+<span class="k">'max-depth'</span>:               2
+<span class="k">'max-statements'</span>:        15</pre>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 30.1 · the legacy objection: baseline the past, scope every tier to the change -->
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">On a codebase that predates you</p>
+    <h2>Your four thousand violations<br>are not today's problem.</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="n">01 · BASELINE</div>
+        <p>Count what is there today. That number is only allowed to <strong>go down</strong>.</p>
+      </div>
+      <div class="card">
+        <div class="n">02 · SCOPE</div>
+        <p>Every tier reads the files this turn changed. Nothing else is asked to pass.</p>
+      </div>
+      <div class="card">
+        <div class="n">03 · IGNORE</div>
+        <p>The file too bad to touch: name it, and say so out loud.</p>
+      </div>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Duplication</p>
+      <h2>The linter reads one file at a time.</h2>
+    </div>
+    <div>
+      <div class="rule"></div>
+      <p class="body">jscpd reads all of them. Copy-paste across modules is a structural finding too — and one tool covers about 150 languages.</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Your numbers, not mine</p>
+      <h2>A threshold is a conversation with your codebase.</h2>
+    </div>
+    <div>
+      <div class="rule"></div>
+      <p class="body">Not a config you copy off a slide.</p>
+      <p class="body"><strong>The agent never gets tired of refactoring.</strong> It will hold a bar most teams negotiate down by Thursday.</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="split wide-right">
+    <div>
+      <p class="eyebrow">Structural · recorded</p>
+      <h3>Two findings in.<br>A blocked turn out.</h3>
+      <p class="body">Milliseconds, every edit. The hook blocks; the guide comes attached.</p>
+    </div>
+    <div>
+      <!-- media/structural.cast — cut from capture/casts/09-slice-0.cast (Slice 0, t=744–800s).
+           Shows: eslint FAIL (2) with the missing-return-type guide, the PostToolUse hook
+           returning a blocking error, then eslint FAIL (1) with the mixed-returns guide. 57s. -->
+      <div class="cast" id="cast-structural"></div>
+      <p class="caption">Slice 0, unedited &middot; the sensor fires, the hook blocks, the guide explains</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide divider">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Sensor 2 of 3</p>
+      <div class="big">2</div>
+      <h2>Behavioral</h2>
+      <p class="lede">A passing test and a test that would notice are not the same thing.</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="stack">
+    <p class="eyebrow">Böckeler's own result</p>
+    <h3>Coverage is the gameable one.</h3>
+    <svg class="dg" viewBox="0 0 1136 320" role="img" aria-label="Line coverage versus mutation score on the same test suite">
+  <g class="dg-label" opacity=".75">
+    <text x="0" y="24">LINE COVERAGE</text>
+    <text x="620" y="24">MUTANTS THAT SURVIVED</text>
+  </g>
+  <g>
+    <rect x="0" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="28" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="56" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="84" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="112" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="140" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="168" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="196" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="224" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="252" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="0" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="28" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="56" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="84" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="112" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="140" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="168" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="196" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="224" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="252" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="0" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="28" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="56" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="84" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="112" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="140" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="168" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="196" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="224" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="252" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="0" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="28" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="56" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="84" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="112" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="140" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="168" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="196" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="224" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="252" y="128" width="20" height="20" class="dg-fill-accent"/>
+  </g>
+  <g>
+    <rect x="620" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="648" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="676" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="704" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="732" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="760" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="788" y="44" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="816" y="44" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="844" y="44" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="872" y="44" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="620" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="648" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="676" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="704" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="732" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="760" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="788" y="72" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="816" y="72" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="844" y="72" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="872" y="72" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="620" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="648" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="676" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="704" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="732" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="760" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="788" y="100" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="816" y="100" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="844" y="100" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="872" y="100" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="620" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="648" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="676" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="704" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="732" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="760" y="128" width="20" height="20" class="dg-fill-accent"/>
+    <rect x="788" y="128" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="816" y="128" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="844" y="128" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+    <rect x="872" y="128" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+  </g>
+  <g class="dg-num">
+    <text x="0" y="216">100%</text>
+    <text x="620" y="216">13</text>
+  </g>
+  <g class="dg-body" opacity=".8">
+    <text x="0" y="258">Did the test run this line?<tspan x="0" dy="26">Every line, every time. Green.</tspan></text>
+    <text x="620" y="258">Is every path covered by a real assertion?<tspan x="620" dy="26">Thirteen changes slipped through unnoticed.</tspan></text>
+  </g>
+</svg>
+    <p class="body">Statement coverage. Zero unit tests.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Same suite, different question</p>
+      <div class="big accent">13</div>
+    </div>
+    <div>
+      <div class="rule"></div>
+      <h3>mutations no test noticed.</h3>
+      <p class="body">Break the code on purpose, run the suite, watch it stay green. Every mutant that survives is an assertion you never wrote.</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Keeping it affordable</p>
+      <h3>Mutate only what<br>this session touched.</h3>
+      <p class="body">A whole-repo run is a coffee break. The changed-file run finishes inside the turn.</p>
+      <p class="body">Too slow for every keystroke. Fast enough to run before the agent is allowed to stop.</p>
+    </div>
+    <div>
+<pre class="code"><span class="c">// the behavioral sensor</span>
+npx stryker run \
+  --mutate <span class="k">"src/domain/quest.ts"</span>
+
+<span class="c">// seconds, not minutes</span></pre>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="split wide-right">
+    <div>
+      <p class="eyebrow">Behavioral · recorded</p>
+      <h3>A mutant lives.<br>Then it doesn't.</h3>
+      <p class="body">Thirty seconds from a green suite to a suite that means something.</p>
+    </div>
+    <div>
+      <!-- RECORDING NOTE (not for the screen) — 05-behavioral-mutant-survived.cast:
+           the Stop hook runs Stryker scoped to the changed file, one mutant survives,
+           the mutant-survived guide explains the assertion gap, the agent adds the
+           missing assertion and the re-run kills it. -->
+      <div class="cast" id="cast-behavioral"></div>
+      <p class="caption">05-behavioral-mutant-survived.cast · one survivor, the missing assertion, a clean re-run</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide divider">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Sensor 3 of 3</p>
+      <div class="big">3</div>
+      <h2>Design</h2>
+      <p class="lede">The part everybody assumes needs a human.</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">The assumption</p>
+      <h2>Design is judgment.<br>So you reach for a model.</h2>
+    </div>
+    <div>
+      <div class="rule"></div>
+      <p class="body">Cohesion, naming, responsibility — no linter has an opinion about any of it.</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="split">
+    <div>
+      <div class="rule"></div>
+      <p class="eyebrow">The reversal</p>
+      <h2>Most of what we call design<br>is <span class="accent">computable</span>.</h2>
+      <p class="lede">Not a heuristic. A rule that fails, in milliseconds, with a sentence attached.</p>
+    </div>
+    <div>
+      <img class="shot" src="media/computable-vs-judgment.png" style="border:none"
+           alt="A precisely machined gear beside a loose tangle of scribbles">
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">The shape the rules protect</p>
+      <h3>Every one of those boundaries<br>is a rule a linter can check.</h3>
+    </div>
+    <div>
+      <div class="hex">
+        <div class="zone">src/adapters</div>
+        <p class="what">terminal · browser · files</p>
+        <div class="hex">
+          <div class="zone">src/ports</div>
+          <p class="what">what the game asks of the world</p>
+          <div class="hex core">
+            <div class="zone">src/domain</div>
+            <p class="what">rooms, movement, the bag</p>
+          </div>
+        </div>
+      </div>
+      <p class="inward">← dependencies point inward</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">Design, computed</p>
+    <h2>Design rules the agent<br>cannot negotiate with.</h2>
+    <div class="cards">
+      <div class="card"><div class="n">01 &middot; PLACEMENT</div><p>Dependencies point inward. The domain never imports an adapter.</p></div>
+      <div class="card"><div class="n">02 &middot; PURITY</div><p>The domain must be deterministic. Take a Random port instead of Math.random().</p></div>
+      <div class="card"><div class="n">03 &middot; TESTABILITY</div><p>Hand-rolled fakes only. Write a Fake in test/fakes/ instead of mocking.</p></div>
+    </div>
+    <p class="attrib">rule three, after Michael Feathers</p>
+    <p class="foot">The coaching guide is the rule&rsquo;s message field &mdash; one sentence per rule, written once, shipped in the config.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <!-- 50.5 · legacy: freeze two boundaries, not an architecture -->
+  <div class="split">
+    <div>
+      <p class="eyebrow">The codebase you actually have</p>
+      <h3>You do not need a hexagon.<br>You need two boundaries<br>you still believe in.</h3>
+      <p class="body">The two you would defend in a code review. A package that must not import another. A layer that must not reach the database.</p>
+      <p class="body"><strong>Freeze exactly those.</strong> No architecture required &mdash; only a boundary you are willing to name.</p>
+    </div>
+    <div>
+<pre class="code"><span class="c">// eslint.config.mjs</span>
+files: [<span class="k">'src/billing/**'</span>]
+
+<span class="c">// no-restricted-imports</span>
+patterns: [{
+  group:   [<span class="k">'**/checkout/**'</span>],
+  message: <span class="k">'go through the contract'</span>
+}]
+
+<span class="c">// then baseline what is already
+// there. only new ones fail.</span></pre>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">Where the effort goes</p>
+    <h2>Invariants you can name in advance.</h2>
+    <svg class="dg" viewBox="0 0 1136 320" role="img" aria-label="Domain at the centre, ports then adapters around it; every arrow that crosses a ring is a lint rule">
+  <defs>
+    <marker id="hexc-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path class="dg-arrowhead" d="M0 0 L10 5 L0 10 z"/></marker>
+    <marker id="hexc-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path class="dg-fill-accent" d="M0 0 L10 5 L0 10 z"/></marker>
+  </defs>
+
+  <polygon points="450,160 365,307.2 195,307.2 110,160 195,12.8 365,12.8"
+           fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <polygon points="398,160 339,262.2 221,262.2 162,160 221,57.8 339,57.8"
+           fill="none" stroke="currentColor" stroke-width="1.5" opacity=".85"/>
+  <polygon points="346,160 313,217.2 247,217.2 214,160 247,102.8 313,102.8"
+           class="dg-fill-accent" opacity=".13"/>
+  <polygon points="346,160 313,217.2 247,217.2 214,160 247,102.8 313,102.8"
+           class="dg-accent-stroke" stroke-width="2"/>
+
+  <g stroke="currentColor" stroke-width="1.5" opacity=".75" marker-end="url(#hexc-in)">
+    <line x1="201" y1="296.8" x2="245" y2="220.6"/>
+    <line x1="122" y1="160"   x2="208" y2="160"/>
+    <line x1="201" y1="23.2"  x2="245" y2="99.4"/>
+  </g>
+
+  <g class="dg-accent-stroke" stroke-width="2" marker-end="url(#hexc-out)">
+    <line x1="309" y1="210.2" x2="332" y2="250.1"/>
+    <line x1="338" y1="160"   x2="384" y2="160"/>
+    <line x1="309" y1="109.8" x2="332" y2="69.9"/>
+  </g>
+  <g class="dg-accent-stroke" stroke-width="2.5" stroke-linecap="round">
+    <path d="M328 251 L350 273 M350 251 L328 273"/>
+    <path d="M387 149 L409 171 M409 149 L387 171"/>
+    <path d="M328 47  L350 69  M350 47  L328 69"/>
+  </g>
+
+  <g class="dg-label" text-anchor="middle">
+    <text x="280" y="44">ADAPTERS</text>
+    <text x="280" y="246">PORTS</text>
+  </g>
+  <text class="dg-label dg-accent" x="280" y="166" text-anchor="middle">DOMAIN</text>
+
+  <line x1="552" y1="48" x2="552" y2="272" stroke="currentColor" stroke-width="1.5" opacity=".3"/>
+
+  <text class="dg-label dg-accent" x="596" y="110">EVERY ARROW ACROSS A RING IS A LINT RULE</text>
+  <g class="dg-body">
+    <text x="596" y="150">inward is legal — adapters may import the domain</text>
+    <text x="596" y="178">outward is not — nor a clock, nor a random number</text>
+  </g>
+  <text class="dg-label" x="596" y="224" opacity=".7">MILLISECONDS · AFTER EVERY FILE EDIT</text>
+</svg>
+    <p class="foot">Whatever refuses to move &mdash; cohesion, semantic duplication, a name that lies &mdash; is what the model is for. Dollars, thirty seconds, once a session.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="split">
+    <div>
+      <p class="eyebrow">The charter</p>
+      <h3>Eight questions.<br>Nothing else.</h3>
+      <p class="body">Without one, the design sensor becomes the slop it exists to prevent.</p>
+    </div>
+    <div>
+<pre class="code"><span class="c">// design-sensor charter</span>
+PLACEMENT    wrong layer?
+             one module, two jobs?
+ABSTRACTION  duplication a matcher
+               cannot see?
+             did one change ripple
+               wider than it should?
+NAMING       does any name lie?
+             primitive obsession?
+TESTS        specs, or transcripts?
+             test pain that is really
+               design pain?
+<span class="c">// cap: 5 ranked findings</span></pre>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">The gate</p>
+      <h3>Never buy model time while a linter still has something to say.</h3>
+    </div>
+    <div>
+<pre class="code"><span class="c">// Stop hook</span>
+already reviewed?  <span class="k">exit</span>  <span class="c">// once a session</span>
+no source changed? <span class="k">exit</span>  <span class="c">// nothing to read</span>
+cheap sensor red?  <span class="k">exit</span>  <span class="c">// it speaks first</span>
+
+otherwise          <span class="k">block</span></pre>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="split wide-right">
+    <div>
+      <p class="eyebrow">Design · recorded</p>
+      <h3>The agent said done.<br>The hook disagreed.</h3>
+    </div>
+    <div>
+      <!-- RECORDING NOTE (not for the screen) — 06-design-stop-block.cast:
+           the agent declares the work complete, the Stop hook blocks and orders the
+           design-sensor skill, the sensor reports a misplaced responsibility in the
+           changed files, the agent moves it and the second Stop passes clean. -->
+      <div class="cast" id="cast-design"></div>
+      <p class="caption">06-design-stop-block.cast · Stop hook blocks, sensor finds it, retry clean</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+<!-- ================= beat-7-8 ================= -->
+<section class="slide divider">
+  <div class="stack">
+    <p class="eyebrow">Putting it together</p>
+    <div class="rule"></div>
+    <h2>The layered loop</h2>
+    <p class="lede">Cheap sensors run constantly. Expensive ones wait their turn.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">The takeaway</p>
+    <h2>Trigger frequency matches sensor cost</h2>
+    <svg class="dg" viewBox="0 0 1136 340" role="img" aria-label="How often each sensor fires, drawn to scale">
+  <g class="dg-num" text-anchor="end">
+    <text x="250" y="72">Structural</text>
+    <text x="250" y="182">Behavioral</text>
+    <text x="250" y="292">Design</text>
+  </g>
+  <g class="dg-label" text-anchor="end" opacity=".7">
+    <text x="250" y="96">MILLISECONDS</text>
+    <text x="250" y="206">SECONDS</text>
+    <text x="250" y="316">DOLLARS</text>
+  </g>
+  <g class="dg-tick" stroke="currentColor" stroke-width="5" stroke-linecap="butt">
+    <g id="fr-row1"></g>
+  </g>
+  <g class="dg-accent-stroke" stroke-width="5" stroke-linecap="butt">
+    <!-- structural: 32 ticks -->
+    <g>
+      <line x1="310" y1="46" x2="310" y2="82"/><line x1="336" y1="46" x2="336" y2="82"/><line x1="362" y1="46" x2="362" y2="82"/><line x1="388" y1="46" x2="388" y2="82"/>
+      <line x1="414" y1="46" x2="414" y2="82"/><line x1="440" y1="46" x2="440" y2="82"/><line x1="466" y1="46" x2="466" y2="82"/><line x1="492" y1="46" x2="492" y2="82"/>
+      <line x1="518" y1="46" x2="518" y2="82"/><line x1="544" y1="46" x2="544" y2="82"/><line x1="570" y1="46" x2="570" y2="82"/><line x1="596" y1="46" x2="596" y2="82"/>
+      <line x1="622" y1="46" x2="622" y2="82"/><line x1="648" y1="46" x2="648" y2="82"/><line x1="674" y1="46" x2="674" y2="82"/><line x1="700" y1="46" x2="700" y2="82"/>
+      <line x1="726" y1="46" x2="726" y2="82"/><line x1="752" y1="46" x2="752" y2="82"/><line x1="778" y1="46" x2="778" y2="82"/><line x1="804" y1="46" x2="804" y2="82"/>
+      <line x1="830" y1="46" x2="830" y2="82"/><line x1="856" y1="46" x2="856" y2="82"/><line x1="882" y1="46" x2="882" y2="82"/><line x1="908" y1="46" x2="908" y2="82"/>
+      <line x1="934" y1="46" x2="934" y2="82"/><line x1="960" y1="46" x2="960" y2="82"/><line x1="986" y1="46" x2="986" y2="82"/><line x1="1012" y1="46" x2="1012" y2="82"/>
+      <line x1="1038" y1="46" x2="1038" y2="82"/><line x1="1064" y1="46" x2="1064" y2="82"/><line x1="1090" y1="46" x2="1090" y2="82"/><line x1="1116" y1="46" x2="1116" y2="82"/>
+    </g>
+    <!-- behavioral: 7 ticks -->
+    <g>
+      <line x1="310" y1="156" x2="310" y2="192"/><line x1="440" y1="156" x2="440" y2="192"/><line x1="570" y1="156" x2="570" y2="192"/>
+      <line x1="700" y1="156" x2="700" y2="192"/><line x1="830" y1="156" x2="830" y2="192"/><line x1="960" y1="156" x2="960" y2="192"/>
+      <line x1="1090" y1="156" x2="1090" y2="192"/>
+    </g>
+    <!-- design: 1 tick -->
+    <g><line x1="310" y1="266" x2="310" y2="302"/></g>
+  </g>
+  <g class="dg-body" opacity=".8">
+    <text x="330" y="120">after every file edit</text>
+    <text x="330" y="230">when the agent finishes a turn</text>
+    <text x="330" y="292">once a session, and only if the cheap ones are green</text>
+  </g>
+</svg>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 7.3 · The cost of the loop — principle only until the run exists -->
+<section class="slide dark">
+  <div class="split">
+    <div>
+      <p class="eyebrow">What the loop costs</p>
+      <h3>Two of the three tiers<br>are free in practice.</h3>
+      <p class="body">Milliseconds and seconds. At this scale you cannot find the cheap tiers in the bill.</p>
+    </div>
+    <div>
+      <div class="rule"></div>
+      <h3>The design tier is the only one you pay for.</h3>
+      <p class="body">And it is gated behind the cheap ones being green, so most turns never buy it.</p>
+      <p class="foot">Ask me in Q&amp;A what it costs on a real week — the honest answer is that I have the loop, not the A/B.</p>
+    </div>
+  </div>
+  <!-- NEEDS: one feature built twice, sensors off then on, tokens and wall-clock recorded both
+       times. Do not estimate it, do not round it from memory, and do not borrow slide 11's
+       figure — that measured refactoring, not the loop. When the run exists, the number
+       replaces the foot line. Until then the slide answers the question honestly. -->
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">Where a sensor gets killed</p>
+    <h3>An agent that cannot pass a sensor will try to remove it.</h3>
+    <div class="cards">
+      <div class="card">
+        <div class="n">01 · IN THE SOURCE</div>
+        <p>An inline <code>eslint-disable</code>. Inert: the finding comes back, plus a note that the directive did nothing.</p>
+      </div>
+      <div class="card">
+        <div class="n">02 · IN THE CONFIG</div>
+        <p>Threshold raised, hook deleted &mdash; both are diffs. The gate re-runs the sensors, or proves the hook did.</p>
+      </div>
+      <div class="card">
+        <div class="n">03 · WHAT NOTHING CATCHES</div>
+        <p>A threshold raised on purpose, in a reviewed diff. That is a code review, not a tool.</p>
+      </div>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 7.4 · the escape hatch: one suppression, reason in the source, counted -->
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">The escape hatch</p>
+      <h3>One way out, and it<br>lands in the config.</h3>
+      <p class="body">Some code is honestly a 9. The exception moves into <code>eslint.config.mjs</code> as a scoped block.</p>
+      <p class="body"><strong>Visible in a diff. Greppable. Scoped to a named path.</strong> A comment on line 400 of a source file is none of those.</p>
+    </div>
+    <div>
+<pre class="code"><span class="c">// eslint.config.mjs</span>
+{
+  files: [<span class="k">'src/adapters/vendor-shim.ts'</span>],
+  rules: { <span class="k">'max-params'</span>: <span class="k">'off'</span> },
+}
+
+<span class="c">// the file next door still reports</span></pre>
+      <p class="foot">More ceremony than a comment. That is the point.</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="stack">
+    <p class="eyebrow">The whole architecture, in one line</p>
+    <h2>Instructions are a request.<br>Hooks are a <span class="accent">wall</span>.</h2>
+    <img class="shot" src="media/request-vs-wall.png" style="border:none;max-height:300px;width:auto;margin:34px auto 0"
+         alt="One robot striding over a dashed line; another stopped at a door, badging in">
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">The reframe</p>
+    <h2>Sensors are comprehensibility machines</h2>
+    <p class="lede">Review does not scale to agent output.</p>
+    <p class="body">Not gates that stop bad code. Machines that produce code small enough to review at the speed it arrives.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="stack">
+    <p class="eyebrow">Language coverage</p>
+    <h3>TypeScript is the vehicle, not the point</h3>
+    <table>
+      <thead>
+        <tr><th>Tier</th><th>Pick yours</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Structural</td><td>ESLint · PMD · Ruff · golangci-lint</td></tr>
+        <tr><td>Duplication</td><td>jscpd — one tool, most languages</td></tr>
+        <tr><td>Behavioral</td><td>Stryker · PIT · mutmut · cargo-mutants</td></tr>
+        <tr><td>Design, computational</td><td>dependency-cruiser · ArchUnit · import-linter · deptrac</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 8.3b · The installer: the answer to "not my language, not my stack" -->
+<section class="slide dark">
+  <div class="stack">
+    <p class="eyebrow">You do not port this by hand</p>
+    <h2>Point your agent at your repo<br>and say: <span class="accent">install the sensors</span>.</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="n">01 &middot; READS THE GROUND</div>
+        <p>Your language, your build tool, your existing lint, your agent runtime. It detects, then confirms.</p>
+      </div>
+      <div class="card">
+        <div class="n">02 &middot; CALIBRATES ON YOUR CODE</div>
+        <p>It refuses to paste my thresholds. A number that fires a thousand times on day one is off by day two.</p>
+      </div>
+      <div class="card">
+        <div class="n">03 &middot; PROVES EACH ONE FIRED</div>
+        <p>Writes a probe, watches the sensor fail, deletes the probe. A sensor nobody has watched fail is a guess.</p>
+      </div>
+    </div>
+    <p class="foot">A skill, for Claude Code and for Codex. It proposes the whole plan and stops for your approval before it writes a single file.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- 8.3c · The honest state of it: the guides are long and this is beta -->
+<section class="slide">
+  <div class="split">
+    <div>
+      <p class="eyebrow">Where this still falls short</p>
+      <blockquote>&ldquo;I have made this longer than usual because I have not had time to make it shorter.&rdquo;</blockquote>
+      <p class="attrib">Blaise Pascal, 1657 &middot; usually misattributed to Mark Twain</p>
+    </div>
+    <div>
+      <div class="rule"></div>
+      <h3>The guides are too long.</h3>
+      <p class="body">Every one names the smell, the fix and the trap. Shorter would be better, and shorter is harder &mdash; I have not earned the short version yet.</p>
+      <p class="body"><strong>This is beta.</strong> The thresholds, the wording and the gate are all still moving. You are getting the loop, not a finished product.</p>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide dark">
+  <div class="stack">
+    <p class="eyebrow">Say this out loud</p>
+    <h2>None of this is new.<br>It is newly <span class="accent">necessary</span>.</h2>
+    <p class="body">ArchUnit has enforced architecture for years. What changed is that the thing writing the code cannot form a habit.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<section class="slide">
+  <div class="stack">
+    <div class="rule"></div>
+    <p class="eyebrow">Take it with you</p>
+    <h2>Clone the loop, not the game</h2>
+    <h3>github.com/SDiamante13/katacombs-kata-ts</h3>
+    <p class="body">The longer version is a book: <em>Software Craftsmanship for AI Coding Agents</em>, Packt.</p>
+    <p class="foot">Every article, tool and finding cited today is listed with links on the references page beside these slides.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+</div></div>
+<div id="ov"><p class="ovhead">Every slide &nbsp;·&nbsp; click one, or arrows then Enter &nbsp;·&nbsp; Esc to go back</p><div id="ovgrid"></div></div>
+<div id="hud"><span id="num">1</span> / <span id="tot">7</span> &nbsp;·&nbsp; ← → nav &nbsp;·&nbsp; <b>O</b> overview &nbsp;·&nbsp; G first &nbsp;·&nbsp; f fullscreen</div>
+
+<script src="vendor/asciinema-player.min.js"></script>
+<script>
+/* ---- scale the fixed-size deck to whatever viewport it lands in ---- */
+const deck = document.getElementById('deck');
+function fit(){
+  const s = Math.min(innerWidth / 1280, innerHeight / 720);
+  deck.style.transform = `scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* ---- navigation ---- */
+const slides = [...document.querySelectorAll('.slide')];
+document.getElementById('tot').textContent = slides.length;
+let i = 0;
+function show(n){
+  i = Math.max(0, Math.min(slides.length - 1, n));
+  slides.forEach((s, k) => s.classList.toggle('on', k === i));
+  document.getElementById('num').textContent = i + 1;
+  location.hash = i + 1;
+}
+/* ---- overview: 52 slides is too many to walk through one arrow at a time ----
+   Home and End were the only jumps, and a MacBook has no Home key -- it is
+   fn+Left, which nobody reaches for in front of a room. This builds the grid
+   lazily on first open so the page still loads as one slide. */
+const ov = document.getElementById('ov'), ovgrid = document.getElementById('ovgrid');
+let ovOpen = false, ovSel = 0, ovBuilt = false;
+
+function buildOverview(){
+  if (ovBuilt) return;
+  slides.forEach((s, k) => {
+    const cell = document.createElement('button');
+    cell.className = 'ovcell'; cell.type = 'button';
+    const thumb = document.createElement('div'); thumb.className = 'ovthumb';
+    const clone = s.cloneNode(true);
+    clone.classList.remove('on');
+    clone.setAttribute('data-ov', '');            // so the layout sensor skips clones
+    clone.querySelectorAll('.cast').forEach(c => { c.innerHTML = ''; });
+    thumb.appendChild(clone);
+    const num = document.createElement('span'); num.className = 'ovnum';
+    num.textContent = String(k + 1);
+    cell.append(thumb, num);
+    cell.onclick = () => { closeOverview(); show(k); };
+    ovgrid.appendChild(cell);
+  });
+  ovBuilt = true;
+}
+function paintSel(){
+  [...ovgrid.children].forEach((c, k) => c.classList.toggle('sel', k === ovSel));
+  ovgrid.children[ovSel]?.scrollIntoView({ block: 'nearest' });
+}
+function openOverview(){
+  buildOverview(); ovSel = i; ovOpen = true;
+  ov.classList.add('on'); paintSel();
+}
+function closeOverview(){ ovOpen = false; ov.classList.remove('on'); }
+
+const perRow = () => Math.max(1, Math.floor(ovgrid.clientWidth / 228));
+
+addEventListener('keydown', e => {
+  if (ovOpen){
+    if (e.key === 'Escape' || e.key === 'o' || e.key === 'O') closeOverview();
+    else if (e.key === 'ArrowRight') { ovSel = Math.min(slides.length - 1, ovSel + 1); paintSel(); }
+    else if (e.key === 'ArrowLeft')  { ovSel = Math.max(0, ovSel - 1); paintSel(); }
+    else if (e.key === 'ArrowDown')  { ovSel = Math.min(slides.length - 1, ovSel + perRow()); paintSel(); }
+    else if (e.key === 'ArrowUp')    { ovSel = Math.max(0, ovSel - perRow()); paintSel(); }
+    else if (e.key === 'Home' || e.key === 'g') { ovSel = 0; paintSel(); }
+    else if (e.key === 'End' || e.key === 'G')  { ovSel = slides.length - 1; paintSel(); }
+    else if (e.key === 'Enter') { closeOverview(); show(ovSel); }
+    else return;
+    e.preventDefault();
+    return;
+  }
+  if (e.key === 'ArrowRight' || e.key === 'PageDown') show(i + 1);
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(i - 1);
+  else if (e.key === 'o' || e.key === 'O' || e.key === 'Escape') openOverview();
+  else if (e.key === 'Home' || e.key === 'g') show(0);
+  else if (e.key === 'End' || e.key === 'G') show(slides.length - 1);
+  else if (e.key === 'f') document.documentElement.requestFullscreen?.();
+});
+ov.onclick = e => { if (e.target === ov) closeOverview(); };
+show(parseInt(location.hash.slice(1)) - 1 || 0);
+if (location.search.includes('overview')) openOverview();   // after show(), so it selects the right cell
+
+/* ---- layout sensor: open the deck with ?layout to audit every slide ----
+   The stage is a fixed 1280x720 box with 64/72 padding and no overflow rule,
+   so content that grows past it silently bleeds off the top and the bottom.
+   That is invisible while authoring and obvious from the back of a room.
+   This walks every slide, measures the real content box, and reports. */
+if (location.search.includes('layout')) (async () => {
+  await document.fonts.ready;
+  const T = 64, B = 656, L = 72, R = 1208, MIN_GAP = 24;
+  const prev = i, bad = [];
+  const box = e => e.getBoundingClientRect();
+  slides.forEach((s, n) => {
+    slides.forEach(x => x.classList.remove('on'));
+    s.classList.add('on');
+    const sr = box(s), sc = 1280 / sr.width;
+    const rel = e => { const r = box(e); return {
+      t: (r.top - sr.top) * sc, b: (r.bottom - sr.top) * sc,
+      l: (r.left - sr.left) * sc, r: (r.right - sr.left) * sc, w: r.width, h: r.height }; };
+    const els = [...s.querySelectorAll('h1,h2,h3,p,blockquote,pre,table,figcaption,.big,.cards,img,.cast,svg')]
+      .filter(e => !e.classList.contains('brandmark'))
+      .filter(e => { const r = box(e); return r.width > 1 && r.height > 1; });
+    /* A glyph escapes its own box whenever line-height < font-size, so box geometry
+       alone cannot see one heading painting on top of another. Grow each box by the
+       half-leading before testing anything. */
+    const inked = e => {
+      const r = rel(e), cs = getComputedStyle(e);
+      const fs = parseFloat(cs.fontSize), lh = parseFloat(cs.lineHeight);
+      const over = Number.isFinite(lh) && lh < fs ? (fs - lh) / 2 : 0;
+      return { ...r, t: r.t - over, b: r.b + over, over };
+    };
+    if (!els.length) return;
+    let top = 1e9, bot = -1e9, left = 1e9, right = -1e9;
+    els.forEach(e => { const r = rel(e);
+      top = Math.min(top, r.t); bot = Math.max(bot, r.b);
+      left = Math.min(left, r.l); right = Math.max(right, r.r); });
+    const why = [];
+    if (top < T) why.push(`bleeds ${Math.round(T - top)}px off the top`);
+    if (bot > B) why.push(`bleeds ${Math.round(bot - B)}px off the bottom`);
+    if (right > R) why.push(`${Math.round(right - R)}px past the right margin`);
+    if (left < L) why.push(`${Math.round(L - left)}px past the left margin`);
+    if (!why.length && top - T < MIN_GAP) why.push(`only ${Math.round(top - T)}px of top margin`);
+    s.querySelectorAll('svg').forEach(svg => {
+      const tx = [...svg.querySelectorAll('text')].filter(e => e.textContent.trim());
+      for (let a = 0; a < tx.length; a++) for (let c = a + 1; c < tx.length; c++) {
+        const ra = rel(tx[a]), rb = rel(tx[c]);
+        if (Math.min(ra.b, rb.b) - Math.max(ra.t, rb.t) > 2 && Math.min(ra.r, rb.r) - Math.max(ra.l, rb.l) > 2)
+          why.push(`diagram text collides: "${tx[a].textContent.trim()}" / "${tx[c].textContent.trim()}"`);
+      }
+    });
+    const tx = els.filter(e => (e.textContent || '').trim() && !['IMG', 'svg'].includes(e.tagName));
+    for (let a = 0; a < tx.length; a++) for (let c = a + 1; c < tx.length; c++) {
+      if (tx[a].contains(tx[c]) || tx[c].contains(tx[a])) continue;
+      const ra = inked(tx[a]), rb = inked(tx[c]);
+      const ov = Math.min(ra.b, rb.b) - Math.max(ra.t, rb.t);
+      if (ov > 1 && Math.min(ra.r, rb.r) - Math.max(ra.l, rb.l) > 3)
+        why.push(`text on text${ra.over || rb.over ? ' (glyph overhang)' : ''} ${Math.round(ov)}px: `
+          + `"${tx[a].textContent.trim().slice(0, 22)}" / "${tx[c].textContent.trim().slice(0, 22)}"`);
+    }
+    if (why.length) bad.push({ slide: n + 1, why: [...new Set(why)] });
+  });
+  show(prev);
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;left:12px;top:12px;z-index:99;max-width:44ch;max-height:92vh;overflow:auto;' +
+    'background:#F5F1EA;color:#333232;font:13px/1.5 ui-monospace,Menlo,monospace;padding:14px 16px;border-left:4px solid ' +
+    (bad.length ? '#9c3b2e' : '#2f6a3f');
+  el.innerHTML = bad.length
+    ? '<b>layout: ' + bad.length + ' of ' + slides.length + ' slides need work</b><br>' +
+      bad.map(b => 'slide ' + b.slide + '<br>' + b.why.map(w => '&nbsp;&nbsp;' + w).join('<br>')).join('<br>')
+    : '<b>layout: PASS</b><br>' + slides.length + ' slides, all inside their margins';
+  el.onclick = () => el.remove();
+  document.body.appendChild(el);
+  console.log(bad.length ? bad : 'layout: PASS');
+})();
+
+/* ---- recordings (generated) ---- */
+  const NOCAST = location.search.includes('nocast');
+  function mount(id, src){
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (NOCAST) { el.style.minHeight = '260px'; return; }
+    AsciinemaPlayer.create(src, el, {
+      fit: 'width', idleTimeLimit: 1.5, theme: 'asciinema',
+      controls: true, preload: true
+    });
+  }
+  mount('cast-structural', 'media/structural.cast');
+
+</script>
+</body>
+</html>
