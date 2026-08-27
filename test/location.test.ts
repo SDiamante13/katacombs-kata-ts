@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { Door } from '../src/domain/door.ts';
+import { Item } from '../src/domain/item.ts';
 import { Location } from '../src/domain/location.ts';
 
 describe('a location', () => {
@@ -80,16 +81,16 @@ describe('a location with something shut in it', () => {
     expect(cell.toward('N')).toBe(corridor);
   });
 
-  it('finds the thing standing in it by the word for it', () => {
+  it('finds the door standing in it by the word for it', () => {
     const { cell, grille } = aGrilledCell();
 
-    expect(cell.thing('GATE')).toBe(grille);
+    expect(cell.doorNamed('GATE')).toBe(grille);
   });
 
   it('finds nothing by that word where nothing was hung', () => {
     const cell = new Location('Cell', 'Four walls and a drain.');
 
-    expect(cell.thing('GATE')).toBeNull();
+    expect(cell.doorNamed('GATE')).toBeNull();
   });
 
   it('lists what stands in it', () => {
@@ -102,6 +103,37 @@ describe('a location with something shut in it', () => {
     const cell = new Location('Cell', 'Four walls and a drain.');
 
     expect(cell.doors()).toEqual([]);
+  });
+});
+
+describe('a location with something lying in it', () => {
+  it('holds what it was built holding', () => {
+    const key = new Item('KEY', 'rusted key', 'A key of black iron.');
+    const cell = new Location('Cell', 'Four walls and a drain.');
+
+    Location.lay(cell, key);
+
+    expect(cell.items()).toEqual([key]);
+  });
+
+  it('keeps what was already lying there when more is laid', () => {
+    const key = new Item('KEY', 'rusted key', 'A key of black iron.');
+    const lantern = new Item('LANTERN', 'brass lantern', 'A lantern of dented brass.');
+    const cell = new Location('Cell', 'Four walls and a drain.');
+
+    Location.lay(cell, key);
+    Location.lay(cell, lantern);
+
+    expect(cell.items().map((item) => item.held())).toEqual([
+      'A rusted key.',
+      'A brass lantern.',
+    ]);
+  });
+
+  it('holds nothing where nothing was left', () => {
+    const cell = new Location('Cell', 'Four walls and a drain.');
+
+    expect(cell.items()).toEqual([]);
   });
 });
 

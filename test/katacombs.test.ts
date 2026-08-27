@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Direction } from '../src/domain/direction.ts';
 import { katacombs } from '../src/domain/katacombs.ts';
+import { NOUNS } from '../src/domain/noun.ts';
 import type { Location } from '../src/domain/location.ts';
 
 import { described, everyPlace, walk, waysWhere } from './support/the-map.ts';
@@ -60,7 +61,7 @@ describe('the katacombs', () => {
 
 describe('what the katacombs shut', () => {
   it('hang an iron gate east of the Crypt, and it answers to GATE', () => {
-    expect(walk(['DOWN']).thing('GATE')?.describe(false)).toBe(
+    expect(walk(['DOWN']).doorNamed('GATE')?.describe(false)).toBe(
       'An iron gate of black bars, hung in the arch. It is closed.',
     );
   });
@@ -75,6 +76,45 @@ describe('what the katacombs shut', () => {
     expect(waysWhere(isShut)).toEqual(['Crypt E', 'Ossuary W']);
   });
 });
+
+describe('what the katacombs leave lying about', () => {
+  it('leave a rusted key in the Guard Room, and it answers to KEY', () => {
+    expect(
+      walk(['N'])
+        .items()
+        .map((item) => item.describe()),
+    ).toEqual(['A key of black iron, its teeth worn round.']);
+  });
+
+  it('leave a brass lantern in the Armoury, and it answers to LANTERN', () => {
+    expect(
+      walk(['N', 'E'])
+        .items()
+        .map((item) => item.describe()),
+    ).toEqual(['A brass lantern, its glass smoked but whole.']);
+  });
+
+  it('name every loose thing with a word the parser knows', () => {
+    expect(everyPlace().flatMap(unnamedItemsIn)).toEqual([]);
+  });
+
+  it('leave the rest of the world bare', () => {
+    expect(placesHoldingSomething()).toEqual(['Guard Room', 'Armoury']);
+  });
+});
+
+function unnamedItemsIn(place: Location): readonly string[] {
+  return place
+    .items()
+    .filter((item) => NOUNS.every((noun) => !item.answersTo(noun)))
+    .map((item) => `${place.title}: ${item.held()}`);
+}
+
+function placesHoldingSomething(): readonly string[] {
+  return everyPlace()
+    .filter((place) => place.items().length > 0)
+    .map((place) => place.title);
+}
 
 function everyTitle(): readonly string[] {
   return everyPlace().map((place) => place.title);

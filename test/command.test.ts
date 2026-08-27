@@ -31,6 +31,18 @@ describe('reading what the player typed', () => {
     expect(parse('OPEN GATE')).toEqual({ kind: 'open', noun: 'GATE' });
   });
 
+  it('takes TAKE with the word for a thing as a request to pick it up', () => {
+    expect(parse('TAKE KEY')).toEqual({ kind: 'take', noun: 'KEY' });
+  });
+
+  it('takes DROP with the word for a thing as a request to put it down', () => {
+    expect(parse('DROP KEY')).toEqual({ kind: 'drop', noun: 'KEY' });
+  });
+
+  it('takes BAG as a request for what the player carries', () => {
+    expect(parse('BAG')).toEqual({ kind: 'bag' });
+  });
+
   it('takes ? as a request for the command list', () => {
     expect(parse('?')).toEqual({ kind: 'help' });
   });
@@ -59,6 +71,14 @@ describe('reading what the player typed', () => {
     expect(parse('OPEN BANANA')).toEqual({ kind: 'unknown' });
   });
 
+  it('does not understand TAKE with nothing after it', () => {
+    expect(parse('TAKE')).toEqual({ kind: 'unknown' });
+  });
+
+  it('does not understand DROP of a thing the world has never had', () => {
+    expect(parse('DROP BANANA')).toEqual({ kind: 'unknown' });
+  });
+
   it('does not understand a word that is not a command', () => {
     expect(parse('xyzzy')).toEqual({ kind: 'unknown' });
   });
@@ -74,6 +94,9 @@ describe('the command list', () => {
       'GO <N|E|S|W|UP|DOWN> — walk through an exit',
       'LOOK [<N|E|S|W|UP|DOWN>|<thing>] — look about you, in one direction, or at a thing',
       'OPEN <thing> — open a thing that stands in your way',
+      'TAKE <thing> — pick up a thing lying here and put it in your bag',
+      'DROP <thing> — leave a thing you carry lying where you stand',
+      'BAG — list what you carry',
       '? — list what the game understands',
       'QUIT — leave the katacombs',
     ]);

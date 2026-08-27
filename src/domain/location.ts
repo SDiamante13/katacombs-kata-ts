@@ -1,7 +1,9 @@
 import type { Direction } from './direction.ts';
 import { opposite } from './direction.ts';
 import type { Door } from './door.ts';
+import type { Item } from './item.ts';
 import type { Noun } from './noun.ts';
+import { named } from './thing.ts';
 
 export type Views = Readonly<Partial<Record<Direction, string>>>;
 
@@ -11,11 +13,16 @@ export class Location {
   readonly #exits = new Map<Direction, Location>();
   readonly #doors = new Map<Direction, Door>();
   readonly #views: Views;
+  #items: readonly Item[] = [];
 
   constructor(title: string, description: string, views: Views = {}) {
     this.title = title;
     this.description = description;
     this.#views = views;
+  }
+
+  static lay(place: Location, ...items: readonly Item[]): void {
+    place.#items = [...place.#items, ...items];
   }
 
   static connect(from: Location, direction: Direction, to: Location): void {
@@ -50,7 +57,11 @@ export class Location {
     return [...this.#doors.values()];
   }
 
-  thing(noun: Noun): Door | null {
-    return this.doors().find((door) => door.answersTo(noun)) ?? null;
+  items(): readonly Item[] {
+    return this.#items;
+  }
+
+  doorNamed(noun: Noun): Door | null {
+    return named(this.doors(), noun);
   }
 }

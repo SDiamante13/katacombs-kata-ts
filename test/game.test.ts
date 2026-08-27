@@ -22,6 +22,7 @@ describe('walking', () => {
     expect(aGame().play('GO N').said).toEqual([
       'Guard Room',
       'Rusted pikes lean in a rack.',
+      'A rusted key lies here.',
     ]);
   });
 
@@ -33,6 +34,7 @@ describe('walking', () => {
     expect(aGame().play('GO N').next.play('GO E').said).toEqual([
       'Armoury',
       'Empty racks, stripped to the pegs.',
+      'A brass lantern lies here.',
     ]);
   });
 });
@@ -88,6 +90,7 @@ describe('a refusal', () => {
     expect(aGame().play('xyzzy').next.play('GO N').said).toEqual([
       'Guard Room',
       'Rusted pikes lean in a rack.',
+      'A rusted key lies here.',
     ]);
   });
 });

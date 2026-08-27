@@ -3,11 +3,13 @@ import { DIRECTIONS, directionFrom } from './direction.ts';
 import type { Noun } from './noun.ts';
 import { nounFrom } from './noun.ts';
 
+type Handling = 'inspect' | 'open' | 'take' | 'drop';
+
 export type Command =
   | { readonly kind: 'go'; readonly direction: Direction }
   | { readonly kind: 'look'; readonly direction: Direction | null }
-  | { readonly kind: 'inspect'; readonly noun: Noun }
-  | { readonly kind: 'open'; readonly noun: Noun }
+  | { readonly kind: Handling; readonly noun: Noun }
+  | { readonly kind: 'bag' }
   | { readonly kind: 'help' }
   | { readonly kind: 'quit' }
   | { readonly kind: 'unknown' };
@@ -20,6 +22,7 @@ interface Entry {
 
 const UNKNOWN: Command = { kind: 'unknown' };
 const LOOK_AROUND: Command = { kind: 'look', direction: null };
+const BAG: Command = { kind: 'bag' };
 const HELP: Command = { kind: 'help' };
 const QUIT: Command = { kind: 'quit' };
 
@@ -38,19 +41,17 @@ function readLook(rest: readonly string[]): Command {
 
   if (direction !== null) return { kind: 'look', direction };
 
-  return readInspect(target);
+  return readThing('inspect', target);
 }
 
-function readInspect(target: string): Command {
+function readThing(kind: Handling, target: string | undefined): Command {
   const noun = nounFrom(target);
 
-  return noun === null ? UNKNOWN : { kind: 'inspect', noun };
+  return noun === null ? UNKNOWN : { kind, noun };
 }
 
-function readOpen(rest: readonly string[]): Command {
-  const noun = nounFrom(rest[0]);
-
-  return noun === null ? UNKNOWN : { kind: 'open', noun };
+function reads(kind: Handling): (rest: readonly string[]) => Command {
+  return (rest) => readThing(kind, rest[0]);
 }
 
 const VOCABULARY: Readonly<Record<string, Entry>> = {
@@ -67,7 +68,22 @@ const VOCABULARY: Readonly<Record<string, Entry>> = {
   OPEN: {
     usage: 'OPEN <thing>',
     summary: 'open a thing that stands in your way',
-    read: readOpen,
+    read: reads('open'),
+  },
+  TAKE: {
+    usage: 'TAKE <thing>',
+    summary: 'pick up a thing lying here and put it in your bag',
+    read: reads('take'),
+  },
+  DROP: {
+    usage: 'DROP <thing>',
+    summary: 'leave a thing you carry lying where you stand',
+    read: reads('drop'),
+  },
+  BAG: {
+    usage: 'BAG',
+    summary: 'list what you carry',
+    read: (): Command => BAG,
   },
   '?': {
     usage: '?',

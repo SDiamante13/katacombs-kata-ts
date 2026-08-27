@@ -5,11 +5,10 @@ import type { Door } from './door.ts';
 import type { Location } from './location.ts';
 import type { Noun } from './noun.ts';
 import { Opened } from './opened.ts';
-
-const NOT_UNDERSTOOD = 'I do not understand that.';
-const NO_EXIT = 'You cannot go that way.';
-const NOTHING_THERE = 'There is nothing interesting that way.';
-const NO_SUCH_THING = 'There is no such thing here.';
+import { NOTHING_THERE, NOT_UNDERSTOOD, NO_EXIT, NO_SUCH_THING } from './replies.ts';
+import { named } from './thing.ts';
+import type { Moved } from './whereabouts.ts';
+import { Whereabouts } from './whereabouts.ts';
 
 export interface Turn {
   readonly next: Game;
@@ -20,19 +19,31 @@ export class Game {
   readonly finished: boolean;
   readonly #here: Location;
   readonly #opened: Opened;
+  readonly #whereabouts: Whereabouts;
 
-  private constructor(here: Location, finished: boolean, opened: Opened) {
+  private constructor(
+    here: Location,
+    finished: boolean,
+    opened: Opened,
+    whereabouts: Whereabouts,
+  ) {
     this.#here = here;
     this.finished = finished;
     this.#opened = opened;
+    this.#whereabouts = whereabouts;
   }
 
   static begin(entrance: Location): Game {
-    return new Game(entrance, false, Opened.none());
+    return new Game(entrance, false, Opened.none(), Whereabouts.asFound());
   }
 
   arrival(): readonly string[] {
-    return [this.#here.title, this.#here.description, ...this.#whatStandsHere()];
+    return [
+      this.#here.title,
+      this.#here.description,
+      ...this.#whatStandsHere(),
+      ...this.#whatLiesHere(),
+    ];
   }
 
   play(input: string): Turn {
@@ -45,8 +56,21 @@ export class Game {
         return this.#look(command.direction);
       case 'inspect':
         return this.#inspect(command.noun);
+      default:
+        return this.#aboutThings(command);
+    }
+  }
+
+  #aboutThings(command: Command): Turn {
+    switch (command.kind) {
       case 'open':
         return this.#open(command.noun);
+      case 'take':
+        return this.#moving(this.#whereabouts.take(this.#here, command.noun));
+      case 'drop':
+        return this.#moving(this.#whereabouts.drop(this.#here, command.noun));
+      case 'bag':
+        return this.#says(this.#whereabouts.bagReads());
       default:
         return this.#aboutTheGame(command);
     }
@@ -57,7 +81,7 @@ export class Game {
       case 'help':
         return this.#says(commands());
       case 'quit':
-        return { next: new Game(this.#here, true, this.#opened), said: [] };
+        return { next: this.#ending(), said: [] };
       default:
         return this.#says([NOT_UNDERSTOOD]);
     }
@@ -72,21 +96,23 @@ export class Game {
 
     if (door !== null && !this.#isOpen(door)) return this.#says([door.closed()]);
 
-    const moved = new Game(there, false, this.#opened);
+    const moved = new Game(there, false, this.#opened, this.#whereabouts);
 
     return { next: moved, said: moved.arrival() };
   }
 
   #inspect(noun: Noun): Turn {
-    const door = this.#here.thing(noun);
+    const door = this.#here.doorNamed(noun);
 
-    if (door === null) return this.#says([NO_SUCH_THING]);
+    if (door !== null) return this.#says([door.describe(this.#isOpen(door))]);
 
-    return this.#says([door.describe(this.#isOpen(door))]);
+    const item = named(this.#whereabouts.withinReach(this.#here), noun);
+
+    return this.#says([item === null ? NO_SUCH_THING : item.describe()]);
   }
 
   #open(noun: Noun): Turn {
-    const door = this.#here.thing(noun);
+    const door = this.#here.doorNamed(noun);
 
     if (door === null) return this.#says([NO_SUCH_THING]);
     if (this.#isOpen(door)) return this.#says([door.alreadyOpen()]);
@@ -94,12 +120,28 @@ export class Game {
     return { next: this.#opening(door), said: [door.opens()] };
   }
 
+  #moving(move: Moved): Turn {
+    return { next: this.#carrying(move.whereabouts), said: move.said };
+  }
+
+  #ending(): Game {
+    return new Game(this.#here, true, this.#opened, this.#whereabouts);
+  }
+
   #opening(door: Door): Game {
-    return new Game(this.#here, false, this.#opened.with(door));
+    return new Game(this.#here, false, this.#opened.with(door), this.#whereabouts);
+  }
+
+  #carrying(whereabouts: Whereabouts): Game {
+    return new Game(this.#here, false, this.#opened, whereabouts);
   }
 
   #whatStandsHere(): readonly string[] {
     return this.#here.doors().map((door) => door.describe(this.#isOpen(door)));
+  }
+
+  #whatLiesHere(): readonly string[] {
+    return this.#whereabouts.lyingIn(this.#here).map((item) => item.lying());
   }
 
   #isOpen(door: Door): boolean {

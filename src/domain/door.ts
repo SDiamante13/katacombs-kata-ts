@@ -1,22 +1,8 @@
-import type { Noun } from './noun.ts';
+import { Thing } from './thing.ts';
 
-export class Door {
-  readonly #noun: Noun;
-  readonly #name: string;
-  readonly #detail: string;
-
-  constructor(noun: Noun, name: string, detail: string) {
-    this.#noun = noun;
-    this.#name = name;
-    this.#detail = detail;
-  }
-
-  answersTo(word: string): boolean {
-    return this.#noun === word;
-  }
-
+export class Door extends Thing {
   describe(open: boolean): string {
-    return `${this.#detail} It is ${open ? 'open' : 'closed'}.`;
+    return `${this.detail} It is ${open ? 'open' : 'closed'}.`;
   }
 
   closed(): string {
@@ -32,6 +18,6 @@ export class Door {
   }
 
   #reads(state: string): string {
-    return `The ${this.#name} is ${state}.`;
+    return `The ${this.name} is ${state}.`;
   }
 }

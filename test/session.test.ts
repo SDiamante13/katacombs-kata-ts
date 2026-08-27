@@ -24,6 +24,7 @@ describe('a session', () => {
     expect(screen.shown.slice(2)).toEqual([
       'Guard Room',
       'Rusted pikes lean in a rack.',
+      'A rusted key lies here.',
       'Entrance Hall',
       'Daylight dies on wet flagstones.',
     ]);

@@ -1,4 +1,5 @@
 import { Door } from './door.ts';
+import { Item } from './item.ts';
 import { Location } from './location.ts';
 
 export function katacombs(): Location {
@@ -10,15 +11,27 @@ export function katacombs(): Location {
   const watchtower = theWatchtower();
   const ossuary = theOssuary();
 
+  Location.lay(guardRoom, theRustedKey());
+  Location.lay(armoury, theBrassLantern());
+
+  connectTheLoop(entranceHall, guardRoom, armoury, cistern);
+  Location.connect(guardRoom, 'UP', watchtower);
+  Location.connect(entranceHall, 'DOWN', crypt);
+  Location.connectThrough(crypt, 'E', ossuary, theIronGate());
+
+  return entranceHall;
+}
+
+function connectTheLoop(
+  entranceHall: Location,
+  guardRoom: Location,
+  armoury: Location,
+  cistern: Location,
+): void {
   Location.connect(entranceHall, 'N', guardRoom);
   Location.connect(guardRoom, 'E', armoury);
   Location.connect(armoury, 'S', cistern);
   Location.connect(cistern, 'W', entranceHall);
-  Location.connect(entranceHall, 'DOWN', crypt);
-  Location.connect(guardRoom, 'UP', watchtower);
-  Location.connectThrough(crypt, 'E', ossuary, theIronGate());
-
-  return entranceHall;
 }
 
 function theEntranceHall(): Location {
@@ -67,6 +80,18 @@ function theOssuary(): Location {
 
 function theIronGate(): Door {
   return new Door('GATE', 'iron gate', 'An iron gate of black bars, hung in the arch.');
+}
+
+function theRustedKey(): Item {
+  return new Item('KEY', 'rusted key', 'A key of black iron, its teeth worn round.');
+}
+
+function theBrassLantern(): Item {
+  return new Item(
+    'LANTERN',
+    'brass lantern',
+    'A brass lantern, its glass smoked but whole.',
+  );
 }
 
 function theWatchtower(): Location {

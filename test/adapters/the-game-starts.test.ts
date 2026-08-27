@@ -37,6 +37,20 @@ describe('the game the play script actually runs', () => {
     expect(screen).not.toContain('Ossuary');
   });
 
+  it('carries a thing the player picked up into the next room', () => {
+    const { screen, status } = play('GO N\nTAKE KEY\nGO E\nBAG\nQUIT\n');
+
+    expect(status).toBe(0);
+    expect(screen).toContain('A rusted key.');
+  });
+
+  it('leaves a dropped thing lying where the player put it', () => {
+    const { screen, status } = play('GO N\nTAKE KEY\nDROP KEY\nLOOK\nQUIT\n');
+
+    expect(status).toBe(0);
+    expect(screen).toContain('A rusted key lies here.');
+  });
+
   it('walks a direction the world really connects', () => {
     const { screen, status } = play('GO N\nQUIT\n');
 
