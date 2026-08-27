@@ -103,6 +103,11 @@ pre.code .k{color:var(--sky)}
 
 /* ---------- asciinema ---------- */
 .cast{width:100%;border:1px solid rgba(51,50,50,.2);border-radius:4px;overflow:hidden;background:#15191e}
+/* A .stack is full width, and fit:'width' obeys it: a 120x45 tape sized to
+   1136px runs 946px tall and falls off the stage. The terminal's own aspect
+   is the constraint, not the slide — cap the box and centre it. */
+.stack .cast{max-width:440px}
+.split .cast{max-width:540px}
 .slide.dark .cast{border-color:rgba(245,241,234,.2)}
 .ap-player{font-size:13px}
 .caption{font-family:var(--mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:14px}
@@ -1558,9 +1563,28 @@ if (location.search.includes('layout')) (async () => {
   const T = 64, B = 656, L = 72, R = 1208, MIN_GAP = 24;
   const prev = i, bad = [];
   const box = e => e.getBoundingClientRect();
-  slides.forEach((s, n) => {
+  /* A cast player sizes itself from its container, and a hidden container is 0px
+     wide. Every player is built while its slide is display:none, so it only
+     reaches its real size once the slide has been shown and its resize observer
+     has fired. Measuring straight after flipping .on catches the terminal at its
+     unsized intrinsic 120ch and reports a bleed nobody will ever see — the sensor
+     crying wolf on three slides that render correctly. Let it settle first. */
+  const frame = () => new Promise(r => requestAnimationFrame(r));
+  const settled = async s => {
+    const pl = s.querySelector('.ap-player');
+    if (!pl) return;
+    let last = -1, still = 0;
+    for (let k = 0; k < 240 && still < 3; k++) {
+      await frame();
+      const w = Math.round(pl.getBoundingClientRect().width);
+      still = (w === last && w > 1) ? still + 1 : 0;
+      last = w;
+    }
+  };
+  for (const [n, s] of slides.entries()) {
     slides.forEach(x => x.classList.remove('on'));
     s.classList.add('on');
+    await settled(s);
     const sr = box(s), sc = 1280 / sr.width;
     const rel = e => { const r = box(e); return {
       t: (r.top - sr.top) * sc, b: (r.bottom - sr.top) * sc,
@@ -1577,7 +1601,7 @@ if (location.search.includes('layout')) (async () => {
       const over = Number.isFinite(lh) && lh < fs ? (fs - lh) / 2 : 0;
       return { ...r, t: r.t - over, b: r.b + over, over };
     };
-    if (!els.length) return;
+    if (!els.length) continue;
     let top = 1e9, bot = -1e9, left = 1e9, right = -1e9;
     els.forEach(e => { const r = rel(e);
       top = Math.min(top, r.t); bot = Math.max(bot, r.b);
@@ -1606,7 +1630,7 @@ if (location.search.includes('layout')) (async () => {
           + `"${tx[a].textContent.trim().slice(0, 22)}" / "${tx[c].textContent.trim().slice(0, 22)}"`);
     }
     if (why.length) bad.push({ slide: n + 1, why: [...new Set(why)] });
-  });
+  }
   show(prev);
   const el = document.createElement('div');
   el.style.cssText = 'position:fixed;left:12px;top:12px;z-index:99;max-width:44ch;max-height:92vh;overflow:auto;' +
