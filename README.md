@@ -149,9 +149,9 @@ around worth picking up.
 | `?`                           | list commands                                        |
 | `QUIT`                        | leave                                                |
 
-That table is the finished game. `npm run play` answers the rows built so far — today `GO`, `?` and
-`QUIT` — and tells you it did not understand the rest. [`backlog/`](backlog/README.md) has the order
-the others arrive in; `?` always lists exactly what the build in front of you accepts.
+That table is the finished game. `npm run play` answers the rows built so far and tells you it did
+not understand the rest; `?` always lists exactly what the build in front of you accepts.
+[`backlog/`](backlog/README.md) has the order the others arrive in.
 
 **Treasure.** Gold is collected the first time you enter a location holding it, or open something
 containing it. Your score is the gold you leave with.

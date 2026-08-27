@@ -37,6 +37,32 @@ describe('walking', () => {
   });
 });
 
+describe('looking', () => {
+  it('describes what lies in a direction', () => {
+    expect(aGame().play('LOOK N').said).toEqual([
+      'A low arch, and torch smoke curling out of it.',
+    ]);
+  });
+
+  it('leaves the player where they were', () => {
+    expect(aGame().play('LOOK N').next.arrival()).toEqual(aGame().arrival());
+  });
+
+  it('tells a dull direction apart from one the player cannot walk', () => {
+    expect([aGame().play('LOOK W').said, aGame().play('GO W').said]).toEqual([
+      ['There is nothing interesting that way.'],
+      ['You cannot go that way.'],
+    ]);
+  });
+
+  it('prints the place again when the player looks at nothing in particular', () => {
+    expect(aGame().play('LOOK').said).toEqual([
+      'Entrance Hall',
+      'Daylight dies on wet flagstones.',
+    ]);
+  });
+});
+
 describe('a refusal', () => {
   it('says the way is not there when the direction has no exit', () => {
     expect(aGame().play('GO W').said).toEqual(['You cannot go that way.']);

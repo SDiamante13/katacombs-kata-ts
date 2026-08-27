@@ -45,4 +45,23 @@ describe('playing in a terminal', () => {
       '> ',
     ]);
   });
+
+  it('describes a direction without walking the player down it', async () => {
+    const keyboard = new ScriptedKeyboard(['LOOK N', 'QUIT']);
+    const screen = new RecordedWriter();
+
+    await playInTerminal(keyboard, screen);
+
+    expect(afterTheOpening(screen)).toEqual([
+      '> ',
+      'A low arch, and torch smoke curling out of it.\n',
+      '> ',
+    ]);
+  });
 });
+
+const OPENING = ['Entrance Hall\n', 'Daylight dies on wet flagstones.\n'];
+
+function afterTheOpening(screen: RecordedWriter): readonly string[] {
+  return screen.written.slice(OPENING.length);
+}

@@ -38,3 +38,18 @@ describe('a location', () => {
     expect([cell.toward('N'), cell.toward('DOWN')]).toEqual([corridor, sump]);
   });
 });
+
+describe('what a location shows', () => {
+  it('describes a direction it was given a view for', () => {
+    const cell = new Location('Cell', 'Four walls and a drain.', {
+      N: 'A corridor of damp brick.',
+    });
+
+    expect(cell.view('N')).toBe('A corridor of damp brick.');
+  });
+  it('describes nothing in a direction it was given no view for', () => {
+    const cell = new Location('Cell', 'Four walls and a drain.');
+
+    expect(cell.view('N')).toBeNull();
+  });
+});
