@@ -66,6 +66,7 @@ p.body{font-size:22px;line-height:1.55;max-width:34ch;margin:22px 0 0}
 .slide.divider .big{line-height:1;margin-bottom:20px}
 .accent{color:var(--navy)}
 .slide.dark .accent{color:var(--sky)}
+a{color:inherit;text-decoration:none;border-bottom:1px solid var(--sky)}
 blockquote{
   margin:0;font-family:var(--serif);font-weight:500;font-size:46px;line-height:1.28;
   font-style:italic;max-width:20ch;
@@ -184,6 +185,8 @@ tr:last-child td{border-bottom:none}
   position:fixed;right:18px;bottom:14px;font-family:var(--mono);font-size:12px;
   letter-spacing:.12em;color:rgba(255,255,255,.45);z-index:20;
 }
+/* ?bare — the slide with no chrome, for the review page's preview frames */
+body.bare #hud{display:none}
 .brandmark{
   position:absolute;left:72px;bottom:40px;font-family:var(--mono);font-size:10px;
   letter-spacing:.12em;text-transform:uppercase;color:var(--muted);opacity:.85;
@@ -697,8 +700,17 @@ function buildLinesAndTotal(items) {
   <div class="stack">
     <p class="eyebrow">The same thing, actually running</p>
     <h3>A feature goes in. Every sensor fires.</h3>
+    <!-- media/end-to-end.cast — cut from capture/casts/09-slice-2.cast (Slice 2, t=505–1092s).
+         The four stages of the diagram on the slide before, in order and unprompted: the feature's
+         first tests go in, the per-edit hook blocks on eslint, the Stop hook's behavioral tier
+         finds four survivors, the design tier returns three findings, and `npm run check` comes
+         back with every sensor green at 231 of 231 mutants killed. 67s from 587s of tape — the
+         agent's think-time is compressed, no content is dropped. Home paths replaced with ~ at
+         identical width, and the `@` taken out of the commit trailer, because media/ is published.
+         Overlaps the behavioral slide's own beat by design: this is the overview, that is the
+         close-up. -->
     <div class="cast" id="cast-end-to-end"></div>
-    <p class="caption">end-to-end.cast · one feature, TDD hook, every tier firing unprompted</p>
+    <p class="caption">Slice 2 &middot; one feature, from its first test to every sensor green</p>
   </div>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
@@ -977,12 +989,14 @@ npx stryker run \
       <p class="body">Thirty seconds from a green suite to a suite that means something.</p>
     </div>
     <div>
-      <!-- RECORDING NOTE (not for the screen) — 05-behavioral-mutant-survived.cast:
-           the Stop hook runs Stryker scoped to the changed file, one mutant survives,
-           the mutant-survived guide explains the assertion gap, the agent adds the
-           missing assertion and the re-run kills it. -->
+      <!-- media/behavioral.cast — cut from capture/casts/09-slice-2.cast (Slice 2, t=688–877s).
+           Shows: the Stop hook running Stryker on the session's changed files, SENSOR behavior
+           FAIL with four survivors and the mutant-survived guide, the assertions that were
+           missing, and a re-run at 227 of 227 killed. 34s from 189s of tape — the agent's
+           think-time is compressed, no content is dropped. One home path replaced with ~ at
+           identical width. -->
       <div class="cast" id="cast-behavioral"></div>
-      <p class="caption">05-behavioral-mutant-survived.cast · one survivor, the missing assertion, a clean re-run</p>
+      <p class="caption">Slice 2 &middot; four mutants live, the guide names the gap, the re-run kills every one</p>
     </div>
   </div>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
@@ -1439,7 +1453,8 @@ otherwise          <span class="k">block</span></pre>
     <h2>Clone the loop, not the game</h2>
     <h3>github.com/SDiamante13/katacombs-kata-ts</h3>
     <p class="body">The longer version is a book: <em>Software Craftsmanship for AI Coding Agents</em>, Packt.</p>
-    <p class="foot">Every article, tool and finding cited today is listed with links on the references page beside these slides.</p>
+    <h3><a href="references.html">sdiamante13.github.io/katacombs-kata-ts/references.html</a></h3>
+    <p class="foot">Every article, tool and finding cited today, with what this talk takes from each.</p>
   </div>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
@@ -1466,7 +1481,9 @@ function show(n){
   i = Math.max(0, Math.min(slides.length - 1, n));
   slides.forEach((s, k) => s.classList.toggle('on', k === i));
   document.getElementById('num').textContent = i + 1;
-  location.hash = i + 1;
+  // replaceState, not location.hash: arrowing through 52 slides used to leave 52
+  // history entries, and every preview frame on the review page added one more.
+  try { history.replaceState(null, '', '#' + (i + 1)); } catch(e){ location.hash = i + 1; }
 }
 /* ---- overview: 52 slides is too many to walk through one arrow at a time ----
    Home and End were the only jumps, and a MacBook has no Home key -- it is
@@ -1605,6 +1622,7 @@ if (location.search.includes('layout')) (async () => {
 })();
 
 /* ---- recordings (generated) ---- */
+  if (location.search.includes('bare')) document.body.classList.add('bare');
   const NOCAST = location.search.includes('nocast');
   function mount(id, src){
     const el = document.getElementById(id);
@@ -1615,7 +1633,9 @@ if (location.search.includes('layout')) (async () => {
       controls: true, preload: true
     });
   }
+  mount('cast-behavioral', 'media/behavioral.cast');
   mount('cast-design', 'media/design.cast');
+  mount('cast-end-to-end', 'media/end-to-end.cast');
   mount('cast-structural', 'media/structural.cast');
 
 </script>
