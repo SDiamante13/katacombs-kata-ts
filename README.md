@@ -4,8 +4,9 @@ A text adventure game, built from scratch by a coding agent with **three quality
 wired into its loop. The game is the vehicle. The sensors are the point.
 
 Companion repo for the _AI Coding Agent Code Quality_ workshop.
-Slides: not published yet — this repo is still under development. The deck will go up at
-`https://sdiamante13.github.io/katacombs-kata-ts/` when it is ready.
+
+**▶ [Read the slides](https://sdiamante13.github.io/katacombs-kata-ts/)** — 52 slides, with the
+sensors firing in a recorded agent session. Arrow keys to move, `O` for the overview grid.
 
 ---
 
@@ -89,6 +90,11 @@ usually shorter than the argument about whether you need it.
 
 ## Getting started
 
+`main` carries the sensors, not the game — there is no `src/` here on purpose, so you can point
+these at **your own** project without deleting a half-built text adventure first. The game is built
+in slices on branches (`slice-0-…`, `slice-1-…`) for anyone who wants to watch it happen under the
+sensors. On `main`, `npm test` runs the sensors' own tests.
+
 ```sh
 npm install
 npm run check     # typecheck, secrets, tests, structure, duplication, docs, mutants — what the hooks run
@@ -111,7 +117,8 @@ npm run design:report     # the last review, whole
 
 ## Architecture
 
-Hexagonal. The design sensors match on these paths, so the folder names are part of the contract.
+Hexagonal. The design sensors match on these paths, so the folder names are part of the contract —
+they appear on the slice branches, and in your project when you adopt the rules.
 
 ```
 src/domain     pure game logic; no clock, no randomness, no I/O
