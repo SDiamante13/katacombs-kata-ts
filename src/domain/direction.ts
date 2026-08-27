@@ -1,3 +1,5 @@
+import { oneOf } from './vocabulary.ts';
+
 export const DIRECTIONS = ['N', 'E', 'S', 'W', 'UP', 'DOWN'] as const;
 
 export type Direction = (typeof DIRECTIONS)[number];
@@ -11,13 +13,7 @@ const OPPOSITES: Readonly<Record<Direction, Direction>> = {
   DOWN: 'UP',
 };
 
-function isDirection(word: string | undefined): word is Direction {
-  return DIRECTIONS.some((known) => known === word);
-}
-
-export function directionFrom(word: string | undefined): Direction | null {
-  return isDirection(word) ? word : null;
-}
+export const directionFrom = oneOf(DIRECTIONS);
 
 export function opposite(direction: Direction): Direction {
   return OPPOSITES[direction];
