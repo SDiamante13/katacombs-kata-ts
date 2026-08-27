@@ -23,6 +23,14 @@ describe('reading what the player typed', () => {
     expect(parse('LOOK')).toEqual({ kind: 'look', direction: null });
   });
 
+  it('takes LOOK with the word for a thing as a look at that thing', () => {
+    expect(parse('LOOK GATE')).toEqual({ kind: 'inspect', noun: 'GATE' });
+  });
+
+  it('takes OPEN with the word for a thing as a request to open it', () => {
+    expect(parse('OPEN GATE')).toEqual({ kind: 'open', noun: 'GATE' });
+  });
+
   it('takes ? as a request for the command list', () => {
     expect(parse('?')).toEqual({ kind: 'help' });
   });
@@ -43,6 +51,14 @@ describe('reading what the player typed', () => {
     expect(parse('LOOK BANANA')).toEqual({ kind: 'unknown' });
   });
 
+  it('does not understand OPEN with nothing after it', () => {
+    expect(parse('OPEN')).toEqual({ kind: 'unknown' });
+  });
+
+  it('does not understand OPEN of a thing the world has never had', () => {
+    expect(parse('OPEN BANANA')).toEqual({ kind: 'unknown' });
+  });
+
   it('does not understand a word that is not a command', () => {
     expect(parse('xyzzy')).toEqual({ kind: 'unknown' });
   });
@@ -56,7 +72,8 @@ describe('the command list', () => {
   it('names every command the game accepts, and nothing else', () => {
     expect(commands()).toEqual([
       'GO <N|E|S|W|UP|DOWN> — walk through an exit',
-      'LOOK [<N|E|S|W|UP|DOWN>] — look about you, or in one direction',
+      'LOOK [<N|E|S|W|UP|DOWN>|<thing>] — look about you, in one direction, or at a thing',
+      'OPEN <thing> — open a thing that stands in your way',
       '? — list what the game understands',
       'QUIT — leave the katacombs',
     ]);

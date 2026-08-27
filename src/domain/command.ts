@@ -1,9 +1,13 @@
 import type { Direction } from './direction.ts';
 import { DIRECTIONS, directionFrom } from './direction.ts';
+import type { Noun } from './noun.ts';
+import { nounFrom } from './noun.ts';
 
 export type Command =
   | { readonly kind: 'go'; readonly direction: Direction }
   | { readonly kind: 'look'; readonly direction: Direction | null }
+  | { readonly kind: 'inspect'; readonly noun: Noun }
+  | { readonly kind: 'open'; readonly noun: Noun }
   | { readonly kind: 'help' }
   | { readonly kind: 'quit' }
   | { readonly kind: 'unknown' };
@@ -32,7 +36,21 @@ function readLook(rest: readonly string[]): Command {
 
   const direction = directionFrom(target);
 
-  return direction === null ? UNKNOWN : { kind: 'look', direction };
+  if (direction !== null) return { kind: 'look', direction };
+
+  return readInspect(target);
+}
+
+function readInspect(target: string): Command {
+  const noun = nounFrom(target);
+
+  return noun === null ? UNKNOWN : { kind: 'inspect', noun };
+}
+
+function readOpen(rest: readonly string[]): Command {
+  const noun = nounFrom(rest[0]);
+
+  return noun === null ? UNKNOWN : { kind: 'open', noun };
 }
 
 const VOCABULARY: Readonly<Record<string, Entry>> = {
@@ -42,9 +60,14 @@ const VOCABULARY: Readonly<Record<string, Entry>> = {
     read: readGo,
   },
   LOOK: {
-    usage: `LOOK [<${DIRECTIONS.join('|')}>]`,
-    summary: 'look about you, or in one direction',
+    usage: `LOOK [<${DIRECTIONS.join('|')}>|<thing>]`,
+    summary: 'look about you, in one direction, or at a thing',
     read: readLook,
+  },
+  OPEN: {
+    usage: 'OPEN <thing>',
+    summary: 'open a thing that stands in your way',
+    read: readOpen,
   },
   '?': {
     usage: '?',

@@ -134,8 +134,8 @@ Explore an underground world through typed commands, and get out with the treasu
 you can open: doors, gates, passages. Every link is two-way and consistent: if south from A reaches
 B, then north from B reaches A. No two locations share a title.
 
-**Playing.** On arrival the game prints the location's title and description, then anything lying
-around worth picking up.
+**Playing.** On arrival the game prints the location's title and description, then whatever stands
+in your way and anything lying around worth picking up.
 
 | Command                       | Does                                                 |
 | ----------------------------- | ---------------------------------------------------- |

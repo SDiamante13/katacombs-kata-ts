@@ -23,6 +23,20 @@ describe('the game the play script actually runs', () => {
     expect(screen.split('\n')[0]).toBe('Entrance Hall');
   });
 
+  it('opens the way through, and walks the player past it', () => {
+    const { screen, status } = play('GO DOWN\nOPEN GATE\nGO E\nQUIT\n');
+
+    expect(status).toBe(0);
+    expect(screen).toContain('Ossuary');
+  });
+
+  it('refuses the same way while the gate is still shut', () => {
+    const { screen, status } = play('GO DOWN\nGO E\nQUIT\n');
+
+    expect(status).toBe(0);
+    expect(screen).not.toContain('Ossuary');
+  });
+
   it('walks a direction the world really connects', () => {
     const { screen, status } = play('GO N\nQUIT\n');
 

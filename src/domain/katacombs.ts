@@ -1,3 +1,4 @@
+import { Door } from './door.ts';
 import { Location } from './location.ts';
 
 export function katacombs(): Location {
@@ -7,6 +8,7 @@ export function katacombs(): Location {
   const cistern = theCistern();
   const crypt = theCrypt();
   const watchtower = theWatchtower();
+  const ossuary = theOssuary();
 
   Location.connect(entranceHall, 'N', guardRoom);
   Location.connect(guardRoom, 'E', armoury);
@@ -14,6 +16,7 @@ export function katacombs(): Location {
   Location.connect(cistern, 'W', entranceHall);
   Location.connect(entranceHall, 'DOWN', crypt);
   Location.connect(guardRoom, 'UP', watchtower);
+  Location.connectThrough(crypt, 'E', ossuary, theIronGate());
 
   return entranceHall;
 }
@@ -51,8 +54,19 @@ function theCistern(): Location {
 
 function theCrypt(): Location {
   return new Location('Crypt', 'Shelves of the dead, names worn off.', {
+    E: 'Bars of black iron, and the dark carrying on behind them.',
     UP: 'Steps climb back towards the daylight.',
   });
+}
+
+function theOssuary(): Location {
+  return new Location('Ossuary', 'Bones stacked to the vault, sorted by kind.', {
+    W: 'The crypt, and its shelves of worn-off names.',
+  });
+}
+
+function theIronGate(): Door {
+  return new Door('GATE', 'iron gate', 'An iron gate of black bars, hung in the arch.');
 }
 
 function theWatchtower(): Location {
