@@ -67,6 +67,8 @@ export default defineConfig(
       'docs/**',
       '!.claude/**',
       '!.codex/**',
+      // A worktree checked out under .claude is a second repository, not this one.
+      '.claude/worktrees/**',
     ],
   },
   {

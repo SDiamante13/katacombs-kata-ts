@@ -2,6 +2,7 @@ CLAUDE.local.md
 .claude/settings.local.json
 .claude/hooks/notes-sensor.sh
 .claude/hooks/session-brief.sh
+.claude/worktrees/
 
 node_modules/
 dist/
