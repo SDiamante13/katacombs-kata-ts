@@ -1205,10 +1205,10 @@ otherwise          <span class="k">block</span></pre>
       <h3>The agent said done.<br>The hook disagreed.</h3>
     </div>
     <div>
-      <!-- RECORDING NOTE (not for the screen) — 06-design-stop-block.cast:
-           the agent declares the work complete, the Stop hook blocks and orders the
-           design-sensor skill, the sensor reports a misplaced responsibility in the
-           changed files, the agent moves it and the second Stop passes clean. -->
+      <!-- media/design.cast — cut from capture/casts/09-slice-1.cast (Slice 1, t=1223-1276s).
+           Shows: the Stop hook reporting design DUE, the agent running the review, SENSOR
+           design: FAIL on question 12, the repair, and a clean re-check. 53s. The one
+           on-screen home path was replaced with ~ at identical width; nothing else altered. -->
       <div class="cast" id="cast-design"></div>
       <p class="caption">06-design-stop-block.cast · Stop hook blocks, sensor finds it, retry clean</p>
     </div>
@@ -1615,6 +1615,7 @@ if (location.search.includes('layout')) (async () => {
       controls: true, preload: true
     });
   }
+  mount('cast-design', 'media/design.cast');
   mount('cast-structural', 'media/structural.cast');
 
 </script>
