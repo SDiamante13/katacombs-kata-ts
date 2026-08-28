@@ -179,6 +179,21 @@ tr:last-child td{border-bottom:none}
 .slide.dark .points{border-top-color:rgba(245,241,234,.25)}
 .slide.dark .points li::before{background:var(--sky)}
 
+/* ---------- charter: twelve questions that have to read at a glance ---------- */
+/* Six groups over three columns and two rows, so the numbering runs left to right
+   1 -> 12. The group label borrows .card .n's mono treatment: the charter is one
+   more rule set, and should look like the rule sets three slides earlier. */
+.charter{display:grid;grid-template-columns:repeat(3,1fr);gap:26px 40px;margin-top:32px}
+.charter .g{
+  font-family:var(--mono);font-size:13px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--navy);margin:0 0 10px;
+}
+.slide.dark .charter .g{color:var(--sky)}
+.charter ol{margin:0;padding-left:28px}
+.charter li{font-size:19px;line-height:1.36;margin-bottom:8px}
+.charter li:last-child{margin-bottom:0}
+.charter li::marker{font-family:var(--mono);font-size:14px;color:var(--muted)}
+
 /* ---------- diagrams: inline SVG, readable on cream and dark ---------- */
 .dg{display:block;width:100%;height:auto;color:var(--ink);overflow:visible}
 .slide.dark .dg,.dark .dg{color:var(--cream)}
@@ -494,7 +509,6 @@ function buildLinesAndTotal(items) {
     <div>
       <p class="eyebrow">What the agent actually receives</p>
       <h3>Ship the reason<br>with the error.</h3>
-      <p class="body">A threshold is a number.<br>A reason is a brief.</p>
     </div>
     <div>
 <pre class="code"><span class="c">complexity 11 (max 5)</span>
@@ -782,27 +796,14 @@ function buildLinesAndTotal(items) {
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
 
-<section class="slide">
-  <div class="split">
-    <div>
-      <p class="eyebrow">Your numbers, not mine</p>
-      <h2>A threshold is a conversation with your codebase.</h2>
-    </div>
-    <div>
-      <div class="rule"></div>
-      <p class="body">Not a config you copy off a slide.</p>
-      <p class="body"><strong>The agent never gets tired of refactoring.</strong> It will hold a bar most teams negotiate down by Thursday.</p>
-    </div>
-  </div>
-  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
-</section>
+
 
 <section class="slide dark">
   <div class="split wide-right">
     <div>
       <p class="eyebrow">Structural · recorded</p>
-      <h3>Two findings in.<br>A blocked turn out.</h3>
-      <p class="body">Milliseconds, every edit. The hook blocks; the guide comes attached.</p>
+      <h3>The hook blocks<br>the edit, mid-turn.</h3>
+      <p class="body">Milliseconds, every edit. The guide comes attached.</p>
     </div>
     <div>
       <!-- media/structural.cast — cut from capture/casts/09-slice-0.cast (Slice 0, t=744–800s).
@@ -1065,8 +1066,6 @@ npx stryker run \
       <div class="card"><div class="n">02 &middot; PURITY</div><p>The domain must be deterministic. Take a Random port instead of Math.random().</p></div>
       <div class="card"><div class="n">03 &middot; TESTABILITY</div><p>Hand-rolled fakes only. Write a Fake in test/fakes/ instead of mocking.</p></div>
     </div>
-    <p class="attrib">rule three, after Michael Feathers</p>
-    <p class="foot">The coaching guide is the rule&rsquo;s message field &mdash; one sentence per rule, written once, shipped in the config.</p>
   </div>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
@@ -1076,9 +1075,8 @@ npx stryker run \
   <div class="split">
     <div>
       <p class="eyebrow">The codebase you actually have</p>
-      <h3>You do not need a hexagon.<br>You need two boundaries<br>you still believe in.</h3>
-      <p class="body">The two you would defend in a code review. A package that must not import another. A layer that must not reach the database.</p>
-      <p class="body"><strong>Freeze exactly those.</strong> No architecture required &mdash; only a boundary you are willing to name.</p>
+      <h3>Freeze two boundaries<br>you still believe in.</h3>
+      <p class="body">The two you would defend in a code review.</p>
     </div>
     <div>
 <pre class="code"><span class="c">// eslint.config.mjs</span>
@@ -1156,27 +1154,36 @@ patterns: [{
 </section>
 
 <section class="slide dark">
-  <div class="split">
-    <div>
-      <p class="eyebrow">The charter</p>
-      <h3>Eight questions.<br>Nothing else.</h3>
-      <p class="body">Without one, the design sensor becomes the slop it exists to prevent.</p>
+  <div class="stack">
+    <p class="eyebrow">The charter</p>
+    <h3>Twelve questions the design sensor is allowed to ask.</h3>
+    <div class="charter">
+      <div>
+        <p class="g">Placement</p>
+        <ol start="1"><li>Wrong layer or module?</li><li>One module, two jobs?</li></ol>
+      </div>
+      <div>
+        <p class="g">Abstraction</p>
+        <ol start="3"><li>Duplication a matcher cannot see?</li><li>Did one change ripple wider than it should?</li></ol>
+      </div>
+      <div>
+        <p class="g">Naming</p>
+        <ol start="5"><li>Does any name lie?</li><li>Primitive obsession &mdash; a value object waiting?</li></ol>
+      </div>
+      <div>
+        <p class="g">Test design</p>
+        <ol start="7"><li>A specification, or a transcript?</li><li>Test pain that is really design pain?</li></ol>
+      </div>
+      <div>
+        <p class="g">Comments</p>
+        <ol start="9"><li>Does a comment explain <em>what</em> instead of <em>why</em>?</li></ol>
+      </div>
+      <div>
+        <p class="g">Documentation</p>
+        <ol start="10"><li>A decision whose reason is not in the code?</li><li>Has a document stopped being true?</li><li>Does a document restate the code?</li></ol>
+      </div>
     </div>
-    <div>
-<pre class="code"><span class="c">// design-sensor charter</span>
-PLACEMENT    wrong layer?
-             one module, two jobs?
-ABSTRACTION  duplication a matcher
-               cannot see?
-             did one change ripple
-               wider than it should?
-NAMING       does any name lie?
-             primitive obsession?
-TESTS        specs, or transcripts?
-             test pain that is really
-               design pain?
-<span class="c">// cap: 5 ranked findings</span></pre>
-    </div>
+    <p class="foot">Without a charter, the design sensor becomes the slop it exists to prevent. Correctness, style, security and performance belong to somebody else.</p>
   </div>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
@@ -1185,7 +1192,7 @@ TESTS        specs, or transcripts?
   <div class="split">
     <div>
       <p class="eyebrow">The gate</p>
-      <h3>Never buy model time while a linter still has something to say.</h3>
+      <h3>Never buy model time while a linter is still talking.</h3>
     </div>
     <div>
 <pre class="code"><span class="c">// Stop hook</span>
@@ -1203,7 +1210,8 @@ otherwise          <span class="k">block</span></pre>
   <div class="split wide-right">
     <div>
       <p class="eyebrow">Design · recorded</p>
-      <h3>The agent said done.<br>The hook disagreed.</h3>
+      <h3>The agent said done.<br>The hook sent it back.</h3>
+      <p class="body">The hook does not review. It refuses the stop until the agent has.</p>
     </div>
     <div>
       <!-- media/design.cast — cut from capture/casts/09-slice-1.cast (Slice 1, t=1223-1276s).
@@ -1211,21 +1219,13 @@ otherwise          <span class="k">block</span></pre>
            design: FAIL on question 12, the repair, and a clean re-check. 53s. The one
            on-screen home path was replaced with ~ at identical width; nothing else altered. -->
       <div class="cast" id="cast-design"></div>
-      <p class="caption">06-design-stop-block.cast · Stop hook blocks, sensor finds it, retry clean</p>
+      <p class="caption">Slice 1, unedited &middot; design DUE, the agent reviews, question 12 fails, the retry is clean</p>
     </div>
   </div>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
 <!-- ================= beat-7-8 ================= -->
-<section class="slide divider">
-  <div class="stack">
-    <p class="eyebrow">Putting it together</p>
-    <div class="rule"></div>
-    <h2>The layered loop</h2>
-    <p class="lede">Cheap sensors run constantly. Expensive ones wait their turn.</p>
-  </div>
-  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
-</section>
+
 
 <section class="slide">
   <div class="stack">
@@ -1276,27 +1276,7 @@ otherwise          <span class="k">block</span></pre>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
 
-<!-- 7.3 · The cost of the loop — principle only until the run exists -->
-<section class="slide dark">
-  <div class="split">
-    <div>
-      <p class="eyebrow">What the loop costs</p>
-      <h3>Two of the three tiers<br>are free in practice.</h3>
-      <p class="body">Milliseconds and seconds. At this scale you cannot find the cheap tiers in the bill.</p>
-    </div>
-    <div>
-      <div class="rule"></div>
-      <h3>The design tier is the only one you pay for.</h3>
-      <p class="body">And it is gated behind the cheap ones being green, so most turns never buy it.</p>
-      <p class="foot">Ask me in Q&amp;A what it costs on a real week — the honest answer is that I have the loop, not the A/B.</p>
-    </div>
-  </div>
-  <!-- NEEDS: one feature built twice, sensors off then on, tokens and wall-clock recorded both
-       times. Do not estimate it, do not round it from memory, and do not borrow slide 11's
-       figure — that measured refactoring, not the loop. When the run exists, the number
-       replaces the foot line. Until then the slide answers the question honestly. -->
-  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
-</section>
+
 
 <section class="slide">
   <div class="stack">
@@ -1320,28 +1300,7 @@ otherwise          <span class="k">block</span></pre>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
 
-<!-- 7.4 · the escape hatch: one suppression, reason in the source, counted -->
-<section class="slide">
-  <div class="split">
-    <div>
-      <p class="eyebrow">The escape hatch</p>
-      <h3>One way out, and it<br>lands in the config.</h3>
-      <p class="body">Some code is honestly a 9. The exception moves into <code>eslint.config.mjs</code> as a scoped block.</p>
-      <p class="body"><strong>Visible in a diff. Greppable. Scoped to a named path.</strong> A comment on line 400 of a source file is none of those.</p>
-    </div>
-    <div>
-<pre class="code"><span class="c">// eslint.config.mjs</span>
-{
-  files: [<span class="k">'src/adapters/vendor-shim.ts'</span>],
-  rules: { <span class="k">'max-params'</span>: <span class="k">'off'</span> },
-}
 
-<span class="c">// the file next door still reports</span></pre>
-      <p class="foot">More ceremony than a comment. That is the point.</p>
-    </div>
-  </div>
-  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
-</section>
 
 <section class="slide dark">
   <div class="stack">
@@ -1353,15 +1312,7 @@ otherwise          <span class="k">block</span></pre>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
 
-<section class="slide">
-  <div class="stack">
-    <p class="eyebrow">The reframe</p>
-    <h2>Sensors are comprehensibility machines</h2>
-    <p class="lede">Review does not scale to agent output.</p>
-    <p class="body">Not gates that stop bad code. Machines that produce code small enough to review at the speed it arrives.</p>
-  </div>
-  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
-</section>
+
 
 <section class="slide">
   <div class="stack">
@@ -1406,38 +1357,13 @@ otherwise          <span class="k">block</span></pre>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
 
-<!-- 8.3c · The honest state of it: the guides are long and this is beta -->
-<section class="slide">
-  <div class="split">
-    <div>
-      <p class="eyebrow">Where this still falls short</p>
-      <blockquote>&ldquo;I have made this longer than usual because I have not had time to make it shorter.&rdquo;</blockquote>
-      <p class="attrib">Blaise Pascal, 1657 &middot; usually misattributed to Mark Twain</p>
-    </div>
-    <div>
-      <div class="rule"></div>
-      <h3>The guides are too long.</h3>
-      <p class="body">Every one names the smell, the fix and the trap. Shorter would be better, and shorter is harder &mdash; I have not earned the short version yet.</p>
-      <p class="body"><strong>This is beta.</strong> The thresholds, the wording and the gate are all still moving. You are getting the loop, not a finished product.</p>
-    </div>
-  </div>
-  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
-</section>
 
-<section class="slide dark">
-  <div class="stack">
-    <p class="eyebrow">Say this out loud</p>
-    <h2>None of this is new.<br>It is newly <span class="accent">necessary</span>.</h2>
-    <p class="body">ArchUnit has enforced architecture for years. What changed is that the thing writing the code cannot form a habit.</p>
-  </div>
-  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
-</section>
 
 <!-- 8.4 · The book. Its own slide now, so the close stops carrying it in a line. -->
 <section class="slide">
   <div class="split wide-right">
     <div>
-      <p class="eyebrow">The longer version &middot; Packt</p>
+      <p class="eyebrow">Upcoming Book &middot; Packt</p>
       <h2>Software Craftsmanship for AI Coding Agents</h2>
       <p class="foot">Working title</p>
     </div>
@@ -1461,6 +1387,20 @@ otherwise          <span class="k">block</span></pre>
     <h3>github.com/SDiamante13/katacombs-kata-ts</h3>
     <h3><a href="references.html">sdiamante13.github.io/katacombs-kata-ts/references.html</a></h3>
     <p class="foot">Every source cited today, and what this talk takes from each.</p>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
+<!-- last · the workshop CTA. Under thirty words, because it is the slide people photograph. -->
+<section class="slide dark">
+  <div class="stack">
+    <p class="eyebrow">Coming next</p>
+    <h2>A hands-on workshop</h2>
+    <ul class="points">
+      <li>Guided exercises and deeper implementation examples</li>
+      <li>Early-access offer for attendees</li>
+    </ul>
+    <p class="lede" style="margin-top:34px">Watch for an email with dates and curriculum.</p>
   </div>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
