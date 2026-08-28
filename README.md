@@ -5,7 +5,7 @@ wired into its loop. The game is the vehicle. The sensors are the point.
 
 Companion repo for the _AI Coding Agent Code Quality_ workshop.
 
-**▶ [Read the slides](https://sdiamante13.github.io/katacombs-kata-ts/)** — 52 slides, with the
+**▶ [Read the slides](https://sdiamante13.github.io/katacombs-kata-ts/)** — with the
 sensors firing in a recorded agent session. Arrow keys to move, `O` for the overview grid.
 
 ---
