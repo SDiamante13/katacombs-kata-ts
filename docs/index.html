@@ -165,6 +165,20 @@ tr:last-child td{border-bottom:none}
 }
 .shots figure.after figcaption{color:#2f6a3f}
 
+/* ---------- speaker: two portraits flanking the facts ---------- */
+/* Both photos are 739x1600, so a narrow column wants a fixed box and a crop,
+   not .shot's width:100% -- that would run one portrait 500px past the stage. */
+.bio{display:grid;grid-template-columns:236px 1fr 236px;gap:44px;align-items:center;height:100%}
+.portrait{display:block;width:100%;height:480px;object-fit:cover;border-radius:4px}
+/* Three prompts to speak from, not paragraphs to read: at 27px they carry to the
+   back of the room, and the dash marker reuses .rule's navy bar at list scale. */
+.points{margin:30px 0 0;padding:30px 0 0;list-style:none;border-top:1px solid rgba(51,50,50,.2)}
+.points li{position:relative;padding-left:28px;margin:0 0 24px;font-size:27px;line-height:1.38}
+.points li:last-child{margin-bottom:0}
+.points li::before{content:'';position:absolute;left:0;top:.6em;width:14px;height:2px;background:var(--navy)}
+.slide.dark .points{border-top-color:rgba(245,241,234,.25)}
+.slide.dark .points li::before{background:var(--sky)}
+
 /* ---------- diagrams: inline SVG, readable on cream and dark ---------- */
 .dg{display:block;width:100%;height:auto;color:var(--ink);overflow:visible}
 .slide.dark .dg,.dark .dg{color:var(--cream)}
@@ -249,15 +263,35 @@ body.bare #hud{display:none}
 <section class="slide dark">
   <div class="split">
     <div>
-      <p class="eyebrow">AI Coding Agent Code Quality Workshop</p>
+      <p class="eyebrow">Code Quality Workshop</p>
       <h1>Quality Sensors<br>for Agents</h1>
-      <p class="lede">Structural, behavioral and design feedback — while the agent is still working.</p>
+      <p class="lede">Feedback that arrives while the agent is still working.</p>
     </div>
     <div>
       <img class="shot" src="media/sensor.jpg" alt="A pulse oximeter clipped to a finger, showing a live reading">
     </div>
   </div>
   <div class="brandmark">Steven Diamante · Packt · 28 August 2026</div>
+</section>
+
+<!-- 0.2 · Who is talking. Photos and facts from the DevOpsDays Raleigh deck, slide 2. -->
+<section class="slide">
+  <div class="bio">
+    <img class="portrait" src="media/steven-family.jpg"
+         alt="Steven with his partner and two children on a cobbled street in Colombia">
+    <div>
+      <p class="eyebrow">Who am I?</p>
+      <h2>Steven Diamante</h2>
+      <ul class="points">
+        <li>XP background</li>
+        <li>Coaching software teams to be more reliable with AI</li>
+        <li>Raleigh, NC, with my wife and two kids</li>
+      </ul>
+    </div>
+    <img class="portrait" src="media/steven-coffee.jpg"
+         alt="Steven smiling over a cup of coffee in a colonnaded dining room">
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
 
 <section class="slide">
@@ -372,51 +406,19 @@ body.bare #hud{display:none}
 </section>
 
 <!-- 1.11 · The refactoring experiment: 83% fewer input tokens for the same change -->
-<section class="slide dark">
-  <div class="split">
+<section class="slide">
+  <div class="split wide-right">
     <div>
       <p class="eyebrow">Same change, same codebase size</p>
       <div class="big">83<span class="accent">%</span></div>
       <h3 style="margin-top:18px">fewer input tokens.</h3>
-      <p class="foot">Measured on code that had already gone wrong, then organized — the legacy case, not the greenfield one.</p>
+      <p class="body">48&cent; &rarr; <strong>8&cent;</strong> on Sonnet 5.<br>80&cent; &rarr; <strong>14&cent;</strong> on Opus 5.</p>
+      <p class="foot">Legacy code, organized. Not greenfield.</p>
     </div>
     <div>
-      <svg class="dg" viewBox="0 0 560 440" role="img" aria-label="Input tokens fall across fifteen refactoring steps, and what that change costs on Sonnet 5 and Opus 5">
-  <text class="dg-label" x="0" y="20" opacity=".7">INPUT TOKENS FOR THE IDENTICAL CHANGE</text>
-
-  <g stroke="currentColor" stroke-width="1.5" opacity=".45">
-    <line x1="64" y1="282" x2="548" y2="282"/><line x1="64" y1="282" x2="64" y2="48"/>
-  </g>
-  <path d="M64 74 C 150 78, 226 86, 288 100 C 340 112, 372 162, 412 218 C 448 256, 490 270, 548 276"
-        fill="none" class="dg-accent-stroke" stroke-width="3"/>
-  <line x1="300" y1="48" x2="300" y2="282" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 6" opacity=".38"/>
-
-  <g class="dg-num" style="font-size:26px">
-    <text x="78" y="62">159,564</text>
-    <text x="548" y="252" text-anchor="end" class="dg-accent">27,360</text>
-  </g>
-  <g class="dg-label" opacity=".7">
-    <text x="64" y="308">STEP 1</text>
-    <text x="548" y="308" text-anchor="end">STEP 15</text>
-  </g>
-
-  <line x1="0" y1="338" x2="560" y2="338" stroke="currentColor" stroke-width="1.5" opacity=".3"/>
-
-  <text class="dg-label" x="0" y="374" opacity=".7">SONNET 5</text>
-  <g class="dg-num" style="font-size:26px">
-    <text x="190" y="382">48&#162;</text>
-    <text x="270" y="382" opacity=".5" style="font-size:20px">&#8594;</text>
-    <text x="316" y="382" class="dg-accent">8&#162;</text>
-  </g>
-
-  <text class="dg-label" x="0" y="424" opacity=".7">OPUS 5</text>
-  <g class="dg-num" style="font-size:26px">
-    <text x="190" y="432">80&#162;</text>
-    <text x="270" y="432" opacity=".5" style="font-size:20px">&#8594;</text>
-    <text x="316" y="432" class="dg-accent">14&#162;</text>
-  </g>
-</svg>
-      <p class="foot">List price, Aug 2026: $3 per million input tokens on Sonnet 5, $5 on Opus 5.<br>Giles Edwards-Alexander's measured tokens, my arithmetic.</p>
+      <img class="shot" src="media/refactoring-economics.png"
+           alt="Across fifteen refactoring steps the largest file and the input tokens for the same change both collapse, while the data access layer stays flat">
+      <p class="foot">Giles Edwards-Alexander's fifteen refactoring steps.</p>
     </div>
   </div>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
@@ -492,8 +494,7 @@ function buildLinesAndTotal(items) {
     <div>
       <p class="eyebrow">What the agent actually receives</p>
       <h3>Ship the reason<br>with the error.</h3>
-      <p class="body">A threshold on its own is a number to push down. The same finding, carrying two sentences of why and how, is a refactoring brief.</p>
-      <p class="body"><strong>Same tool. Same trigger.</strong> The difference is what the message says.</p>
+      <p class="body">A threshold is a number.<br>A reason is a brief.</p>
     </div>
     <div>
 <pre class="code"><span class="c">complexity 11 (max 5)</span>
@@ -629,25 +630,6 @@ function buildLinesAndTotal(items) {
   <text class="dg-body" x="24" y="352" opacity=".6">Fires if the agent remembers. Usually it doesn't.</text>
   <g class="dg-label"><text x="0" y="410" opacity=".75">WEAKEST</text></g>
 </svg>
-    </div>
-  </div>
-  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
-</section>
-
-<!-- 3.4a · the rollout question — one config file, hook calls it early, CI calls it last -->
-<section class="slide">
-  <div class="split">
-    <div>
-      <p class="eyebrow">The rollout question</p>
-      <h3>What about the developer<br>who never installs the hook?</h3>
-      <p class="lede">Some machines will have it, some will not, and the check cannot depend on which.</p>
-    </div>
-    <div>
-      <div class="rule"></div>
-      <h3>CI is the backstop.</h3>
-      <p class="body">The same lint, duplication and mutation commands run on the pull request. An unhooked machine cannot land unhooked code.</p>
-      <p class="body"><strong>One config file, two callers</strong> &mdash; the hook runs it early, CI runs it last.</p>
-      <div class="callout"><b>If you are on npm</b>husky installs the hook on <code>npm install</code>, so there is no unhooked machine to worry about. Other ecosystems have no equivalent — there, CI is not a backstop, it is the only guarantee.</div>
     </div>
   </div>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
@@ -1451,15 +1433,34 @@ otherwise          <span class="k">block</span></pre>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
 
+<!-- 8.4 · The book. Its own slide now, so the close stops carrying it in a line. -->
+<section class="slide">
+  <div class="split wide-right">
+    <div>
+      <p class="eyebrow">The longer version &middot; Packt</p>
+      <h2>Software Craftsmanship for AI Coding Agents</h2>
+      <p class="foot">Working title</p>
+    </div>
+    <div>
+      <ul class="points" style="border-top:none;margin:0;padding:0">
+        <li>Hold the theory of the system in your own head</li>
+        <li>Stay steerable: planning, TDD, merciless refactoring, small batches</li>
+        <li>Manage the context window before quality degrades</li>
+        <li>Verify: sensors, code review, UAT &mdash; never merge what you cannot trust</li>
+      </ul>
+    </div>
+  </div>
+  <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
+</section>
+
 <section class="slide">
   <div class="stack">
     <div class="rule"></div>
     <p class="eyebrow">Take it with you</p>
     <h2>Clone the loop, not the game</h2>
     <h3>github.com/SDiamante13/katacombs-kata-ts</h3>
-    <p class="body">The longer version is a book: <em>Software Craftsmanship for AI Coding Agents</em>, Packt.</p>
     <h3><a href="references.html">sdiamante13.github.io/katacombs-kata-ts/references.html</a></h3>
-    <p class="foot">Every article, tool and finding cited today, with what this talk takes from each.</p>
+    <p class="foot">Every source cited today, and what this talk takes from each.</p>
   </div>
   <div class="brandmark">&copy; 2026 Diamante Technical Coaching</div>
 </section>
